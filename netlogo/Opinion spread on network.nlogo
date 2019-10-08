@@ -10,19 +10,24 @@ turtles-own
   group
 ]
 
+links-own
+[
+  influence
+]
 to setup
   clear-all
   setup-spacial-network
   setup-background-opinion
-  get-spacial-equilibrium
 end
 
 to setup-spacial-network
   clear-all
   setup-people
   setup-spatially-clustered-network
-  ask turtles [set color white]
+  ask turtles [set color white
+               set group 0]
   ask spacial-links [ set color white ]
+
   reset-ticks
 end
 
@@ -33,14 +38,14 @@ to setup-people
     ; for visual reasons, we don't put any people *too* close to the edges
     setxy (random-xcor * 0.95) (random-ycor * 0.95)
 
-    set group 0
+    set group (random 5) + 1
   ]
   ask turtles
-      [set opinion-threshold 0]
+      [set opinion-threshold default-opinion-threshold]
 end
 
 to setup-spatially-clustered-network
-  let num-links (average-node-degree * total-population) / 2
+  let num-links (average-connections * total-population) / 2
   while [count spacial-links < num-links ]
   [
     ask one-of turtles
@@ -55,6 +60,8 @@ to setup-spatially-clustered-network
   [
     layout-spring turtles spacial-links 0.3 (world-width / (sqrt total-population)) 1
   ]
+  ask spacial-links [set influence default-influence]
+
 end
 
 to setup-background-opinion
@@ -63,29 +70,48 @@ ask turtles
  ask n-of initial-opinion-size turtles
 [
  decide-yes
-
 ]
 end
 
 
 
-to setup-cultural-network
- let mygroup ""
+to setup-cultural-networks
+  let mygroup ""
+
+
+  foreach [1] [this-group ->
+
+
+
 
  let yes-num (initial-group-opinion-percent * group-size) / 100
  let no-num ((100 - initial-group-opinion-percent) * group-size) / 100
 
 
+;;  ask n-of yes-num turtles with [current-opinion = "yes"]
+;;  [ set group this-group
+;;    set opinion-threshold 1]
 
-  ask n-of yes-num turtles with [current-opinion = "yes"]
-  [ set group 1
-    set opinion-threshold 1]
-
-  ask n-of no-num turtles with [current-opinion = "no"]
-  [ set group 1]
+;;  ask n-of no-num turtles with [current-opinion = "no"]
+;;  [ set group this-group
+;;    set opinion-threshold group-opinion-threshold ]
 
 
- let group-links (average-node-degree * group-size) / 2
+    ask n-of yes-num turtles with [group = 0]
+  [
+     set group this-group
+     set opinion-threshold group-opinion-threshold
+      decide-yes
+  ]
+
+    ask n-of no-num turtles with [group = 0]
+  [
+     set group this-group
+     set opinion-threshold group-opinion-threshold
+      decide-no
+  ]
+
+ let group-links (average-connections * group-size) / 2
  while [count cultural-links < group-links ]
 
  [
@@ -100,41 +126,25 @@ to setup-cultural-network
     ]
 
   ]
- ask cultural-links [ set color green ]
-
-
-
-
-end
-
-to get-spacial-equilibrium
-  repeat 10
-      [spread-opinion
-        tick
+ ask cultural-links [
+    set color green
+   set influence group-influence
   ]
-  set-baseline-opinion
+  ]
+
 end
+
+
 
 
 to go
 
-  repeat 50
-      [
-
-;;  if all? turtles [current-opinion = "yes"]
-;;    [ stop ]
-
-;;  if all? turtles [current-opinion = "no"]
-;;    [ stop ]
-
 
   spread-opinion
-  spread-culture-opinion
-
 
   tick
-  ]
-  set-final-opinion
+
+
 end
 
 to decide-yes  ;; turtle procedure
@@ -149,34 +159,29 @@ end
 
 
 to spread-opinion
-  let yes-count 0
-  let no-count 0
-  ask turtles
-    [set yes-count count spacial-link-neighbors with [current-opinion = "yes"]
-     set no-count  count spacial-link-neighbors with [current-opinion = "no"]
+  let yes-weight 0
+  let no-weight 0
 
-  if  yes-count > no-count and random 10 > opinion-threshold * 10
-                [ decide-yes ]
-  if  yes-count < no-count and random 10 > opinion-threshold * 10
-                [ decide-no ]
-  ]
-end
+  ask one-of turtles [
+               set yes-weight 0
+               set no-weight 0
+               ask my-links [
+                             if [current-opinion] of other-end = "yes"
+                                [set yes-weight  yes-weight + ([influence] of self)]
+                             if [current-opinion] of other-end = "no"
+                                [set no-weight  no-weight + ([influence] of self)]
+                            ]
+              if  yes-weight > no-weight and random 10 > opinion-threshold * 10
+                   [ decide-yes ]
+              if  yes-weight < no-weight and random 10 > opinion-threshold * 10
+                   [ decide-no ]
 
-to spread-culture-opinion
-  let yes-count 0
-  let no-count 0
-  ask turtles
-    [set yes-count count cultural-link-neighbors with [current-opinion = "yes"]
-     set no-count  count cultural-link-neighbors with [current-opinion = "no"]
 
-  if  yes-count > no-count and random 10 > opinion-threshold * 10
-                [ decide-yes ]
-  if  yes-count < no-count and random 10 > opinion-threshold * 10
-                [ decide-no ]
   ]
 end
 
 to show-group
+ show-all
  ask turtles with [group = 1]
     [set size 3]
 
@@ -184,6 +189,11 @@ to show-group
   [ hide-turtle
     ask my-links [hide-link]
    ]
+end
+
+to show-spacial-network
+  show-all
+  ask cultural-links [hide-link]
 end
 
 to show-all
@@ -201,10 +211,10 @@ to set-baseline-opinion
      [set baseline-opinion current-opinion]
 end
 
-to set-final-opinion
-  ask turtles
-  [set final-opinion current-opinion]
+to reset-opinion-threshold
+  ask turtles [set opinion-threshold default-opinion-threshold]
 end
+
 
 
 
@@ -239,10 +249,10 @@ ticks
 30.0
 
 BUTTON
-57
-116
-226
-156
+236
+27
+405
+67
 Set up spacial network
 setup-spacial-network
 NIL
@@ -256,13 +266,13 @@ NIL
 1
 
 BUTTON
-73
-635
-168
-675
+596
+531
+691
+571
 NIL
 go
-NIL
+T
 1
 T
 OBSERVER
@@ -292,10 +302,10 @@ PENS
 "no" 1.0 0 -2674135 true "" "plot (count turtles with [current-opinion = \"no\"]) / (count turtles) * 100"
 
 SLIDER
-38
-44
-243
-77
+27
+27
+232
+60
 total-population
 total-population
 10
@@ -307,40 +317,40 @@ NIL
 HORIZONTAL
 
 SLIDER
-28
-188
-233
-221
+29
+125
+234
+158
 initial-opinion-size
 initial-opinion-size
 1
 total-population
-245.0
+240.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-37
-79
-242
-112
-average-node-degree
-average-node-degree
+26
+62
+231
+95
+average-connections
+average-connections
 1
 total-population - 1
-7.0
+10.0
 1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-1020
-445
-1163
-490
+1220
+390
+1363
+435
 Current total opinion
 count turtles with [current-opinion = \"yes\"]
 17
@@ -348,12 +358,12 @@ count turtles with [current-opinion = \"yes\"]
 11
 
 BUTTON
-60
-560
-196
-593
+104
+545
+240
+578
 Setup subculture
-setup-cultural-network
+setup-cultural-networks
 NIL
 1
 T
@@ -365,15 +375,15 @@ NIL
 1
 
 SLIDER
-54
-444
-226
-477
+83
+369
+255
+402
 group-size
 group-size
 0
-100
-100.0
+total-population
+51.0
 1
 1
 NIL
@@ -391,11 +401,11 @@ count turtles with [current-opinion = \"yes\" and group = 1]
 11
 
 BUTTON
-67
-227
-186
-260
-Seed Opinion
+242
+126
+362
+159
+setup  opinion
 setup-background-opinion
 NIL
 1
@@ -408,27 +418,10 @@ NIL
 1
 
 BUTTON
-57
-268
-190
-301
-baseline opinion
-get-spacial-equilibrium
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-BUTTON
-510
-496
-666
-529
+435
+489
+591
+522
 show cultural group
 show-group
 NIL
@@ -442,10 +435,10 @@ NIL
 1
 
 BUTTON
-511
-533
-592
-566
+779
+491
+860
+524
 show all
 show-all
 NIL
@@ -474,145 +467,58 @@ MONITOR
 339
 1208
 384
-Spacial equiibrium opinion %
+baseline opinion %
 (count turtles with [baseline-opinion = \"yes\"] / total-population) * 100
 17
 1
 11
 
 TEXTBOX
-88
-31
-238
-49
+174
+10
+324
+28
 Set up spacial network
 11
 0.0
 1
 
 TEXTBOX
-65
-166
-215
-184
-Set up background opinion
+159
+102
+309
+120
+Set up opinion
 11
 0.0
-1
-
-TEXTBOX
-264
-196
-414
-214
-Opinion seed
-11
-0.0
-1
-
-TEXTBOX
-256
-268
-406
-296
-Establish equilibrium opinion on spacial network
-11
-0.0
-1
-
-TEXTBOX
-62
-306
-353
-334
--------------------------------------
-11
-0.0
-1
-
-TEXTBOX
-108
-9
-258
-27
-1a STEP BY STEP SET UP
-11
-0.0
-1
-
-TEXTBOX
-54
-326
-360
-354
-1b ONE CLICK SPACIAL SET UP AND OPINION BASELINE
-11
-0.0
-1
-
-BUTTON
-100
-350
-166
-383
-NIL
-setup
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
 1
 
 MONITOR
 1222
 339
-1326
+1343
 384
-Final opinion %
-(count turtles with [final-opinion = \"yes\"] / total-population) * 100
+current opinion %
+(count turtles with [current-opinion = \"yes\"] / total-population) * 100
 17
 1
 11
 
 TEXTBOX
-58
-420
-275
-448
+73
+346
+290
+374
 2. SET UP SUBCULTURE NETWORK
 11
 0.0
 1
 
-TEXTBOX
-246
-446
-396
-488
-Initially set up with 1 group of size group-size
-11
-0.0
-1
-
-TEXTBOX
-47
-601
-197
-629
-3. RUN TO NEW EQUILIBRIUM
-11
-0.0
-1
-
 SLIDER
-18
-486
-258
-519
+44
+413
+284
+446
 initial-group-opinion-percent
 initial-group-opinion-percent
 0
@@ -635,10 +541,10 @@ count turtles with [baseline-opinion = \"yes\"]
 11
 
 MONITOR
-1177
-395
-1333
-440
+1014
+448
+1170
+493
 group baseline opinion
 count turtles with [baseline-opinion = \"yes\" and group = 1]
 17
@@ -651,7 +557,7 @@ MONITOR
 1160
 583
 total opinion change
-(count turtles with [final-opinion = \"yes\"]) -\n(count turtles with [baseline-opinion = \"yes\"])
+(count turtles with [current-opinion = \"yes\"]) -\n(count turtles with [baseline-opinion = \"yes\"])
 17
 1
 11
@@ -662,7 +568,7 @@ MONITOR
 1181
 640
 group opinion change
-(count turtles with [final-opinion = \"yes\"and group = 1]) -\n(count turtles with [baseline-opinion = \"yes\" and group = 1])
+(count turtles with [current-opinion = \"yes\"and group = 1]) -\n(count turtles with [baseline-opinion = \"yes\" and group = 1])
 17
 1
 11
@@ -676,6 +582,117 @@ Trying to find small group change with large total change
 11
 0.0
 1
+
+BUTTON
+595
+490
+765
+523
+show spacial network
+show-spacial-network
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+BUTTON
+911
+374
+1014
+407
+reset baseline
+set-baseline-opinion
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+SLIDER
+29
+163
+246
+196
+default-opinion-threshold
+default-opinion-threshold
+0
+1
+0.5
+0.1
+1
+NIL
+HORIZONTAL
+
+BUTTON
+258
+163
+321
+196
+reset
+reset-opinion-threshold
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+SLIDER
+41
+209
+213
+242
+default-influence
+default-influence
+0
+1
+0.5
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+74
+493
+246
+526
+group-influence
+group-influence
+0
+1
+1.0
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+61
+454
+269
+487
+group-opinion-threshold
+group-opinion-threshold
+0
+1
+0.8
+0.1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 Kenni - have had a go at a slightly different model based on explict links rether than the group links.
@@ -704,7 +721,8 @@ Too many and majority always dominates
 Too few and minority cannot spread
 
 
-
+CHANGES
+Combined spread opinion routines into single routine voting across all links.
 
 
 
