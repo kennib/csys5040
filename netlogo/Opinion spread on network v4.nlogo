@@ -9,6 +9,7 @@ turtles-own
   baseline-opinion
   final-opinion
   opinion-threshold
+  influence-level
   group
 ]
 ;; influence weight reflects strength of link - treated as symetrical ie. same in both directions in current model.
@@ -17,7 +18,8 @@ turtles-own
 
 links-own
 [
-  influence
+  link-group
+  weight
 ]
 
 
@@ -32,8 +34,7 @@ to setup-spacial-network
   clear-all
   setup-people
   setup-spatially-clustered-network
-  ask turtles [set color white
-               set group 0]
+
   ask spacial-links [ set color white ]
 
   reset-ticks
@@ -46,11 +47,23 @@ to setup-people
     ; for visual reasons, we don't put any people *too* close to the edges
     setxy (random-xcor * 0.95) (random-ycor * 0.95)
 
-;;    set group (random 5) + 1
+
   ]
-  ask turtles
-      [set opinion-threshold default-opinion-threshold]
+  ask turtles [
+    set color white
+   setup-groups
+    set opinion-threshold default-opinion-threshold]
 end
+;;
+;; assign peopple to cultural groups
+;;
+to setup-groups
+   set group (random 5) + 1
+end
+
+
+
+
 
 to setup-spatially-clustered-network
   let num-links (average-connections * total-population) / 2
@@ -68,7 +81,7 @@ to setup-spatially-clustered-network
   [
     layout-spring turtles spacial-links 0.3 (world-width / (sqrt total-population)) 1
   ]
-  ask spacial-links [set influence default-influence]
+  ask spacial-links [set weight default-weight]
 
 end
 
@@ -84,61 +97,36 @@ end
 
 
 to setup-cultural-networks
-  let mygroup ""
 
+  let group-links 0
 
-  foreach [1] [this-group ->
+  foreach [1 2 3 4 5 ]
 
+  [this-group ->
 
+     set group-size count turtles with [group = this-group]
+     show group-size
+     set group-links (average-connections * group-size) / 2
 
+    while [count cultural-links with [link-group = this-group]  < group-links ]
 
- let yes-num (initial-group-opinion-percent * group-size) / 100
- let no-num ((100 - initial-group-opinion-percent) * group-size) / 100
+     [
 
+       ask one-of turtles with [group = this-group]
 
-;;  ask n-of yes-num turtles with [current-opinion = "yes"]
-;;  [ set group this-group
-;;    set opinion-threshold group-opinion-threshold]
+         [ let choice (one-of (other turtles with [group = this-group]))
+        if choice != nobody [ create-cultural-link-with choice [set link-group this-group]]
+         ]
 
-;;  ask n-of no-num turtles with [current-opinion = "no"]
-;;  [ set group this-group
-;;    set opinion-threshold group-opinion-threshold ]
-
-
-    ask n-of yes-num turtles with [group = 0]
-  [
-     set group this-group
-     set opinion-threshold group-opinion-threshold
-     decide-yes
-  ]
-
-    ask n-of no-num turtles with [group = 0]
-  [
-     set group this-group
-     set opinion-threshold group-opinion-threshold
-      decide-no
-  ]
-
- let group-links (average-connections * group-size) / 2
- while [count cultural-links < group-links ]
-
- [
-  ask one-of turtles
-
-    [
-      if group != 0 [
-         set mygroup group
-         let choice (one-of (other turtles with [group = mygroup]))
-         if choice != nobody [ create-cultural-link-with choice ]
-      ]
-    ]
+     ]
 
   ]
- ask cultural-links [
+
+  ask cultural-links [
     set color green
-   set influence group-influence
+    set weight group-weight
   ]
-  ]
+
 
 end
 
@@ -179,9 +167,9 @@ to spread-opinion
                set no-weight 0
                ask my-links [
                              if [current-opinion] of other-end = "yes"
-                                [set yes-weight  yes-weight + ([influence] of self)]
+                                [set yes-weight  yes-weight + ([weight] of self)]
                              if [current-opinion] of other-end = "no"
-                                [set no-weight  no-weight + ([influence] of self)]
+                                [set no-weight  no-weight + ([weight] of self)]
                             ]
               if  yes-weight > no-weight and random 10 > opinion-threshold * 10
                    [ decide-yes ]
@@ -327,7 +315,7 @@ total-population
 total-population
 10
 1000
-500.0
+1000.0
 5
 1
 NIL
@@ -342,7 +330,7 @@ initial-opinion-size
 initial-opinion-size
 1
 total-population
-240.0
+475.0
 1
 1
 NIL
@@ -357,7 +345,7 @@ average-connections
 average-connections
 1
 total-population - 1
-6.0
+10.0
 1
 1
 NIL
@@ -375,10 +363,10 @@ count turtles with [current-opinion = \"yes\"]
 11
 
 BUTTON
-83
-489
-219
-522
+114
+568
+250
+601
 Setup subculture
 setup-cultural-networks
 NIL
@@ -392,15 +380,15 @@ NIL
 1
 
 SLIDER
-62
-313
-234
-346
+93
+392
+265
+425
 group-size
 group-size
 0
 total-population
-60.0
+194.0
 1
 1
 NIL
@@ -522,25 +510,25 @@ current opinion %
 11
 
 TEXTBOX
-52
-290
-269
-318
+125
+255
+342
+283
 2. SET UP SUBCULTURE NETWORK
 11
 0.0
 1
 
 SLIDER
-23
-357
-263
-390
+54
+436
+294
+469
 initial-group-opinion-percent
 initial-group-opinion-percent
 0
 100
-65.0
+60.0
 1
 1
 NIL
@@ -643,7 +631,7 @@ default-opinion-threshold
 default-opinion-threshold
 0
 1
-0.5
+0.0
 0.1
 1
 NIL
@@ -654,23 +642,8 @@ SLIDER
 209
 213
 242
-default-influence
-default-influence
-0
-1
-0.5
-0.1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-53
-437
-225
-470
-group-influence
-group-influence
+default-weight
+default-weight
 0
 1
 1.0
@@ -680,15 +653,30 @@ NIL
 HORIZONTAL
 
 SLIDER
-40
-398
-248
-431
+84
+516
+256
+549
+group-weight
+group-weight
+0
+1
+1.0
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+71
+477
+279
+510
 group-opinion-threshold
 group-opinion-threshold
 0
 1
-0.8
+0.0
 0.1
 1
 NIL
