@@ -1,3 +1,5 @@
+globals [old-total new-total repeat-totals]
+
 ;; breed for initial spacial network
 undirected-link-breed [spacial-links spacial-link]
 ;; breed for cultural links
@@ -74,18 +76,19 @@ to setup-links
 end
 
 ;;
-;; randomly assign opinions to people with prescribed seed opinion percent
+;; randomly assign opinions to people with prescribed minority opinion percent
 ;;
 
 
 to setup-baseline-opinion
-  let baseline-yes seed-opinion-percent * total-population / 100
-ask turtles
-  [decide-no]
- ask n-of baseline-yes turtles
-[
- decide-yes
-]
+  set repeat-totals 0
+  set old-total 0
+
+  let baseline-minority minority-opinion-percent * total-population / 100
+  set new-total baseline-minority
+
+  ask turtles [decide-majority]
+  ask n-of baseline-minority turtles [decide-minority]
   tick
 end
 
@@ -105,7 +108,6 @@ end
 to set-new-equilibrium
   find-equilibrium
   ask turtles [set final-opinion current-opinion]
-
 end
 
 ;;
@@ -113,18 +115,12 @@ end
 ;;
 
 to find-equilibrium
-  let old-total 0
-  let new-total 1000
-  while [new-total != old-total]
+  set repeat-totals 0
+  while [not equilibrium]
   [
-       set old-total count turtles with [current-opinion = "yes"]
-        repeat 5
-    [spread-opinion]
-        set new-total count turtles with [current-opinion = "yes"]
-        show new-total
+    spread-opinion
     tick
   ]
-
 end
 
 ;;
@@ -134,115 +130,137 @@ end
 
 
 to setup-group-network
+  set repeat-totals 0
+  let group-size total-population * group-percent / 100
+
+  let minority-num (initial-group-opinion-percent * group-size) / 100
+  let majority-num ((100 - initial-group-opinion-percent) * group-size) / 100
 
 
- let group-size total-population * group-percent / 100
-
- let yes-num (initial-group-opinion-percent * group-size) / 100
- let no-num ((100 - initial-group-opinion-percent) * group-size) / 100
-
-
-
-  ask n-of yes-num turtles with [current-opinion = "yes"]
+  ask n-of minority-num turtles with [current-opinion = "minority"]
   [set group 1]
 
 
-  ask n-of no-num turtles with [current-opinion = "no"]
+  ask n-of majority-num turtles with [current-opinion = "majority"]
   [set group 1]
 
   ask turtles with [group = 1]
   [
-       set opinion-threshold group-opinion-threshold
-       set influence group-influence
+    set opinion-threshold group-opinion-threshold
+    set influence group-influence
   ]
 
 
  let group-links (average-connections * group-size) / 2
- while [count social-links < group-links ]
-
+ while [count social-links < group-links]
  [
-  ask turtles
+   ask turtles
+   [
+     if group = 1 [
+       let choice (one-of (other turtles with [group = 1]))
+       if choice != nobody [ create-social-link-with choice ]
+     ]
+   ]
+ ]
 
-    [
-      if group = 1 [
-         let choice (one-of (other turtles with [group = 1]))
-         if choice != nobody [ create-social-link-with choice ]
-      ]
-    ]
-
-  ]
-
-  ask social-links [
-    set color green
+ ask social-links [
+   set color green
    set weight 1
-  ]
-
-
+ ]
 end
 
 
 ;;
-;; run model end to end through
+;; set up model
 ;; network creation and initial equilibrium
-;; grop creation and final equilibrium
+;; group creation
 ;;
 
-to go
+to setup
  setup-baseline-network
  setup-baseline-opinion
  set-baseline-equilibrium
  setup-group-network
- set-new-equilibrium
- stop
 end
 
-to decide-yes  ;; turtle procedure
-  set current-opinion "yes"
+;;
+;; run model
+;; final equilibrium
+;;
+
+to go
+  spread-opinion
+  tick
+
+  if equilibrium [ stop ]
+end
+
+to decide-minority  ;; turtle procedure
+  set current-opinion "minority"
   set color blue
 end
 
-to decide-no  ;; turtle procedure
-  set current-opinion "no"
+to decide-majority ;; turtle procedure
+  set current-opinion "majority"
   set color red
 end
 
 
 to spread-opinion
 ;;  opinion of person is determined from weighted average of opinions of connections and likelihood of person to change opinion
-;;  ie sum of link weights/influnce of neighbours with opinion yes is compared to sum of link weights/influence with opinion of no to determine winning opinion
+;;  ie sum of link weights/influnce of neighbours with minority opinion is compared to sum of link weights/influence with the majority opinionto determine winning opinion
 ;;  then opinion-threshold is used to determine if person will adopt that opinion
 ;;
-  let yes-weight 0
-  let no-weight 0
+  set old-total count turtles with [current-opinion = "minority"]
 
-  ask turtles [
-               set yes-weight 0
-               set no-weight 0
-               ask my-links [
-                             if [current-opinion] of other-end = "yes"
-                                [set yes-weight  yes-weight + ([weight] of self) * ([influence] of other-end)]
-                             if [current-opinion] of other-end = "no"
-                                 [set no-weight  no-weight + ([weight] of self) * ([influence] of other-end)]
-                            ]
-              if  yes-weight > no-weight and random 10 > opinion-threshold * 10
-                   [ decide-yes ]
-              if  yes-weight < no-weight and random 10 > opinion-threshold * 10
-                   [ decide-no ]
+  let minority-weight 0
+  let majority-weight 0
+
+  ask turtles
+  [
+    set minority-weight 0
+    set majority-weight 0
+
+    ask my-links
+    [
+      if [current-opinion] of other-end = "minority"
+      [
+        set minority-weight  minority-weight + ([weight] of self) * ([influence] of other-end)
+      ]
+      if [current-opinion] of other-end = "majority"
+      [
+         set majority-weight  majority-weight + ([weight] of self) * ([influence] of other-end)
+      ]
+    ]
+
+    if  minority-weight > majority-weight and random 10 > opinion-threshold * 10
+      [ decide-minority ]
+    if  minority-weight < majority-weight and random 10 > opinion-threshold * 10
+      [ decide-majority ]
 
   ]
+
+  set new-total count turtles with [current-opinion = "minority"]
+
+  if-else new-total = old-total
+    [ set repeat-totals repeat-totals + 1 ]
+    [ set repeat-totals 0 ]
 end
 
 to show-group
 ;; displays only the focal minority group with its connections
 
- show-all
- ask turtles with [group = 1]
-    [set size 3]
+  show-all
+  ask turtles with [group = 1]
+  [
+    set size 3
+  ]
 
   ask turtles with [group != 1]
-  [ hide-turtle
+  [
+    hide-turtle
     ask my-links [hide-link]
-   ]
+  ]
 end
 
 to show-spacial-network
@@ -254,9 +272,11 @@ end
 to show-all
 ;; shows all people and connections
 
-  ask turtles [
+  ask turtles
+  [
     set size 1
-    show-turtle]
+    show-turtle
+  ]
 
   ask links [show-link]
 end
@@ -274,6 +294,43 @@ to reset-opinion-threshold
 end
 
 
+;; Reporters
+
+to-report equilibrium
+  report repeat-totals >= 5
+end
+
+to-report current-minority-opinion-percent []
+  report (count turtles with [current-opinion = "minority"] / total-population) * 100
+end
+
+to-report current-majority-opinion-percent []
+  report (count turtles with [current-opinion = "majority"] / total-population) * 100
+end
+
+to-report baseline-opinion-percent []
+  report (count turtles with [baseline-opinion = "minority"] / total-population) * 100
+end
+
+to-report current-opinion-percent []
+  report current-minority-opinion-percent
+end
+
+to-report baseline-lean []
+  report baseline-opinion-percent - 50
+end
+
+to-report current-lean []
+  report current-opinion-percent - 50
+end
+
+to-report opinion-change-percent []
+  report current-opinion-percent - baseline-opinion-percent
+end
+
+to-report opinion-overturned []
+  report current-lean > 0
+end
 
 
 ; Copyright 2008 Uri Wilensky.
@@ -324,13 +381,13 @@ NIL
 1
 
 BUTTON
-29
-492
-124
-532
+262
+493
+357
+533
 NIL
 go
-NIL
+T
 1
 T
 OBSERVER
@@ -341,23 +398,23 @@ NIL
 0
 
 PLOT
-1014
-10
-1319
-207
+936
+18
+1333
+205
 Opinion %
 time
 % of nodes
-1.0
-10.0
+0.0
+40.0
 0.0
 100.0
 false
 true
 "" ""
 PENS
-"yes" 1.0 0 -13345367 true "" "plot (count turtles with [current-opinion = \"yes\"] / total-population) * 100"
-"no" 1.0 0 -2674135 true "" "plot (count turtles with [current-opinion = \"no\"] / total-population) * 100"
+"minority" 1.0 0 -13345367 true "" "plot current-minority-opinion-percent"
+"majority" 1.0 0 -2674135 true "" "plot current-majority-opinion-percent"
 
 SLIDER
 20
@@ -368,7 +425,7 @@ total-population
 total-population
 10
 1000
-1000.0
+2000.0
 5
 1
 NIL
@@ -377,13 +434,13 @@ HORIZONTAL
 SLIDER
 23
 115
-235
+236
 148
-seed-opinion-percent
-seed-opinion-percent
+minority-opinion-percent
+minority-opinion-percent
 1
 100
-47.0
+40.0
 1
 1
 NIL
@@ -441,7 +498,7 @@ group-percent
 group-percent
 0
 100
-10.0
+30.0
 1
 1
 NIL
@@ -515,7 +572,7 @@ MONITOR
 1198
 262
 baseline opinion %
-(count turtles with [baseline-opinion = \"yes\"] / total-population) * 100
+baseline-opinion-percent
 2
 1
 11
@@ -526,7 +583,7 @@ MONITOR
 1330
 260
 current opinion %
-(count turtles with [current-opinion = \"yes\"] / total-population) * 100
+current-opinion-percent
 2
 1
 11
@@ -540,7 +597,7 @@ initial-group-opinion-percent
 initial-group-opinion-percent
 0
 100
-60.0
+70.0
 1
 1
 NIL
@@ -641,7 +698,7 @@ default-influence
 default-influence
 0
 1
-0.5
+0.1
 0.1
 1
 NIL
@@ -656,7 +713,7 @@ group-influence
 group-influence
 0
 1
-0.7
+0.8
 0.1
 1
 NIL
@@ -711,26 +768,33 @@ NIL
 NIL
 1
 
-TEXTBOX
-141
-502
-376
-536
-ONE CLICK RUN - RUN ALL STEPS
-14
-0.0
-1
-
 MONITOR
 1010
 214
 1067
 259
 seed %
-seed-opinion-percent
+minority-opinion-percent
 17
 1
 11
+
+BUTTON
+170
+492
+249
+533
+NIL
+setup
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 Method 
@@ -1198,32 +1262,41 @@ NetLogo 6.1.0
 @#$#@#$#@
 @#$#@#$#@
 <experiments>
-  <experiment name="Baseline as function of seed and links" repetitions="1" runMetricsEveryStep="false">
+  <experiment name="How a minority group can change opinions over time" repetitions="1" runMetricsEveryStep="true">
+    <setup>setup</setup>
     <go>go</go>
-    <metric>count turtles with [baseline-opinion = "yes"]</metric>
-    <metric>count turtles with [final-opinion = "yes"]</metric>
-    <steppedValueSet variable="average-connections" first="5" step="5" last="10"/>
-    <steppedValueSet variable="seed-opinion-percent" first="10" step="10" last="50"/>
-    <enumeratedValueSet variable="group-opinion-threshold">
-      <value value="1"/>
-    </enumeratedValueSet>
+    <timeLimit steps="1000"/>
+    <exitCondition>equilibrium</exitCondition>
+    <metric>current-opinion-percent</metric>
+    <metric>opinion-change-percent</metric>
+    <metric>current-lean</metric>
+    <metric>opinion-overturned</metric>
     <enumeratedValueSet variable="total-population">
-      <value value="100"/>
+      <value value="2000"/>
     </enumeratedValueSet>
-    <enumeratedValueSet variable="initial-group-opinion-percent">
-      <value value="0"/>
+    <enumeratedValueSet variable="average-connections">
+      <value value="6"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="minority-opinion-percent">
+      <value value="40"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="group-percent">
-      <value value="0"/>
+      <value value="30"/>
     </enumeratedValueSet>
-    <enumeratedValueSet variable="group-influence">
-      <value value="0"/>
+    <enumeratedValueSet variable="initial-group-opinion-percent">
+      <value value="70"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="default-opinion-threshold">
-      <value value="0"/>
+      <value value="0.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="group-opinion-threshold">
+      <value value="0.7"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="default-influence">
-      <value value="1"/>
+      <value value="0.1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="group-influence">
+      <value value="0.8"/>
     </enumeratedValueSet>
   </experiment>
 </experiments>
