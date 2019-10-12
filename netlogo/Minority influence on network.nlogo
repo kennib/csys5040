@@ -15,13 +15,15 @@ turtles-own
 ;; influence weight reflects strength of link - treated as symetrical ie. same in both directions in current model.
 ;; used to weight influence of neighbours opinion
 
-
+;;
+;; Link weight used in voting model as placeholder defaulted to 1 - doesn't currently have input sliders
+;;
 links-own
 [
   weight
 ]
 ;;
-;; create baseline network with prescribed number
+;; create baseline network with prescribed number of people
 ;;
 ;;
 to setup-baseline-network
@@ -31,13 +33,7 @@ to setup-baseline-network
   reset-ticks
 end
 
-
-to setup
-  clear-all
-  setup-baseline-network
-  setup-baseline-opinion
-end
-
+;; create population with input size, set default influence and opinion threshold and initial position (used by link generation)
 
 to setup-people
   set-default-shape turtles "person"
@@ -50,6 +46,11 @@ to setup-people
     set color white
     set group 0]
 end
+
+;;
+;; random network generation and layout approach taken fron "Virus on Network" sample Netlogo model
+;;
+
 
 to setup-links
   let num-links (average-connections * total-population) / 2
@@ -72,6 +73,11 @@ to setup-links
 
 end
 
+;;
+;; randomly assign opinions to people with prescribed seed opinion percent
+;;
+
+
 to setup-baseline-opinion
   let baseline-yes seed-opinion-percent * total-population / 100
 ask turtles
@@ -80,46 +86,54 @@ ask turtles
 [
  decide-yes
 ]
+  tick
 end
 
-to set-baseline-equilibrium
-  let old-total 0
-  let new-total 1000
-  while [new-total != old-total]
-  [
-       set old-total count turtles with [current-opinion = "yes"]
-        show "old"
-        show old-total
-        repeat 5
-    [spread-opinion]
-        set new-total count turtles with [current-opinion = "yes"]
-        show "new"
-        show new-total
-  ]
-  tick
 
+;;
+;; run voting model to equilibrium for initial spacial network
+
+to set-baseline-equilibrium
+  find-equilibrium
   ask turtles [set baseline-opinion current-opinion]
 end
 
+;;
+;; run voting model to equilibrium for revised network with group links
+
+
 to set-new-equilibrium
+  find-equilibrium
+  ask turtles [set final-opinion current-opinion]
+
+end
+
+;;
+;; run voting model to equilibrium ie. opinion stabilises
+;;
+
+to find-equilibrium
   let old-total 0
   let new-total 1000
   while [new-total != old-total]
   [
        set old-total count turtles with [current-opinion = "yes"]
-        show "old"
-        show old-total
         repeat 5
     [spread-opinion]
         set new-total count turtles with [current-opinion = "yes"]
-        show "new"
         show new-total
+    tick
   ]
-  tick
 
 end
 
-to setup-cultural-networks
+;;
+;; create group based on group size and required group opinion distribution
+;; generate links between group members
+;;
+
+
+to setup-group-network
 
 
  let group-size total-population * group-percent / 100
@@ -127,30 +141,14 @@ to setup-cultural-networks
  let yes-num (initial-group-opinion-percent * group-size) / 100
  let no-num ((100 - initial-group-opinion-percent) * group-size) / 100
 
+
+
   ask n-of yes-num turtles with [current-opinion = "yes"]
   [set group 1]
 
 
   ask n-of no-num turtles with [current-opinion = "no"]
   [set group 1]
-
-
-
-;;    ask n-of yes-num turtles with [group = 0]
-;;  [
-;;     set group 1
-;;     set opinion-threshold group-opinion-threshold
-;;     set influence group-influence
-;;     decide-yes
-;;  ]
-;;
-;;    ask n-of no-num turtles with [group = 0]
-;;  [
-;;     set group 1
-;;     set opinion-threshold group-opinion-threshold
-;;     set influence group-influence
-;;     decide-no
-;;  ]
 
   ask turtles with [group = 1]
   [
@@ -176,21 +174,26 @@ to setup-cultural-networks
 
   ask social-links [
     set color green
-   set weight group-influence
+   set weight 1
   ]
 
 
 end
 
 
-
+;;
+;; run model end to end through
+;; network creation and initial equilibrium
+;; grop creation and final equilibrium
+;;
 
 to go
  setup-baseline-network
  setup-baseline-opinion
  set-baseline-equilibrium
- setup-cultural-networks
+ setup-group-network
  set-new-equilibrium
+ stop
 end
 
 to decide-yes  ;; turtle procedure
@@ -206,7 +209,7 @@ end
 
 to spread-opinion
 ;;  opinion of person is determined from weighted average of opinions of connections and likelihood of person to change opinion
-;;  ie sum of link weights of neighbours with opinion yes is compared to sum of link weights with opinion of no to determine winning opinion
+;;  ie sum of link weights/influnce of neighbours with opinion yes is compared to sum of link weights/influence with opinion of no to determine winning opinion
 ;;  then opinion-threshold is used to determine if person will adopt that opinion
 ;;
   let yes-weight 0
@@ -321,10 +324,10 @@ NIL
 1
 
 BUTTON
-596
-531
-691
-571
+29
+492
+124
+532
 NIL
 go
 NIL
@@ -345,16 +348,16 @@ PLOT
 Opinion %
 time
 % of nodes
-0.0
-52.0
+1.0
+10.0
 0.0
 100.0
-true
+false
 true
 "" ""
 PENS
-"yes" 1.0 0 -13345367 true "" "plot (count turtles with [current-opinion = \"yes\"]) / (count turtles) * 100"
-"no" 1.0 0 -2674135 true "" "plot (count turtles with [current-opinion = \"no\"]) / (count turtles) * 100"
+"yes" 1.0 0 -13345367 true "" "plot (count turtles with [current-opinion = \"yes\"] / total-population) * 100"
+"no" 1.0 0 -2674135 true "" "plot (count turtles with [current-opinion = \"no\"] / total-population) * 100"
 
 SLIDER
 20
@@ -380,7 +383,7 @@ seed-opinion-percent
 seed-opinion-percent
 1
 100
-44.0
+47.0
 1
 1
 NIL
@@ -394,31 +397,31 @@ SLIDER
 average-connections
 average-connections
 1
-total-population - 1
-5.0
+25
+6.0
 1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-1182
-272
-1325
-317
-Current total opinion
+1180
+276
+1323
+321
+current opinion
 count turtles with [current-opinion = \"yes\"]
 17
 1
 11
 
 BUTTON
-31
-384
-204
-417
-4. Set up activist group
-setup-cultural-networks
+27
+360
+219
+393
+4. Set up influencer group
+setup-group-network
 NIL
 1
 T
@@ -430,26 +433,26 @@ NIL
 1
 
 SLIDER
-29
-291
-201
-324
+25
+267
+197
+300
 group-percent
 group-percent
 0
 100
-5.0
+10.0
 1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-1183
-328
-1317
-373
-Group total opinion
+1181
+327
+1332
+372
+group current opinion
 count turtles with [current-opinion = \"yes\" and group = 1]
 17
 1
@@ -473,10 +476,10 @@ NIL
 1
 
 BUTTON
-435
-489
-591
-522
+470
+500
+626
+533
 show cultural group
 show-group
 NIL
@@ -490,10 +493,10 @@ NIL
 1
 
 BUTTON
-779
-491
-860
-524
+814
+502
+895
+535
 show all
 show-all
 NIL
@@ -507,10 +510,10 @@ NIL
 1
 
 MONITOR
-1013
-221
-1131
-266
+1080
+217
+1198
+262
 baseline opinion %
 (count turtles with [baseline-opinion = \"yes\"] / total-population) * 100
 2
@@ -518,10 +521,10 @@ baseline opinion %
 11
 
 MONITOR
-1182
-221
-1303
-266
+1209
+215
+1330
+260
 current opinion %
 (count turtles with [current-opinion = \"yes\"] / total-population) * 100
 2
@@ -529,15 +532,15 @@ current opinion %
 11
 
 SLIDER
-205
-293
-413
-326
+201
+269
+409
+302
 initial-group-opinion-percent
 initial-group-opinion-percent
 0
 100
-50.0
+60.0
 1
 1
 NIL
@@ -546,7 +549,7 @@ HORIZONTAL
 MONITOR
 1012
 276
-1126
+1165
 321
 baseline opinion
 count turtles with [baseline-opinion = \"yes\"]
@@ -566,10 +569,10 @@ count turtles with [baseline-opinion = \"yes\" and group = 1]
 11
 
 MONITOR
-1075
-444
-1215
-489
+1038
+460
+1192
+505
 total opinion change
 (count turtles with [current-opinion = \"yes\"]) -\n(count turtles with [baseline-opinion = \"yes\"])
 17
@@ -577,10 +580,10 @@ total opinion change
 11
 
 MONITOR
-1073
-396
-1232
-441
+1036
+412
+1195
+457
 group opinion change
 (count turtles with [current-opinion = \"yes\"and group = 1]) -\n(count turtles with [baseline-opinion = \"yes\" and group = 1])
 17
@@ -588,20 +591,20 @@ group opinion change
 11
 
 TEXTBOX
-1261
-431
-1411
-473
+1203
+438
+1353
+480
 Trying to find small group change with large total change
 11
 0.0
 1
 
 BUTTON
-595
-490
-765
-523
+630
+501
+800
+534
 show spacial network
 show-spacial-network
 NIL
@@ -645,30 +648,30 @@ NIL
 HORIZONTAL
 
 SLIDER
-216
-343
-388
-376
+212
+319
+384
+352
 group-influence
 group-influence
 0
 1
-0.5
+0.7
 0.1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-28
-342
-210
-375
+24
+318
+206
+351
 group-opinion-threshold
 group-opinion-threshold
 0
 1
-0.5
+0.7
 0.1
 1
 NIL
@@ -692,10 +695,10 @@ NIL
 1
 
 BUTTON
-34
-452
-208
-485
+27
+418
+201
+451
 5. Find new equilibrium
 set-new-equilibrium
 NIL
@@ -708,35 +711,111 @@ NIL
 NIL
 1
 
+TEXTBOX
+141
+502
+376
+536
+ONE CLICK RUN - RUN ALL STEPS
+14
+0.0
+1
+
+MONITOR
+1010
+214
+1067
+259
+seed %
+seed-opinion-percent
+17
+1
+11
+
 @#$#@#$#@
-Kenni - have had a go at a slightly different model based on explict links rether than the group links.
+Method 
 
-Rationale was trying to find structure where initial majority opinion does not dominate.
+1. Create a network of people with prescribed average connections (random network)
 
-Looked for some models on netlogo and found the "Virus on a Network" model and used its intial network set up approach.
+Attributes for person
 
-Otherwise changed its propagation model to a simple voter model and then tried adding further netowrk links for sub-cultures.
+ - Influence - weight given to their opinion by other connected agents in voting model. ie. if 0 their opinion won't be counted
 
-Method - assign a sub-culture attribute to person
-Generate additional links between people with same sub-culture attribute (different link breed).
+- Opinion threshold - likelihood they will change opinion based on result of voting model ie level of commitment to current opinion
+ie. if 1 their opinion won't change
 
-Then try and use this subculture to tip opinion through things like:
-- level of commitment ie higher opinion threshold
-- level influence - higher opinion weight
-- number of connections
-- heterogeneity (are they just in their own echo chamber or able to influnce opinion outside their group) -  multiple attributes could maybe model higher level of social mixing.
+- Current opinion - yes/no
 
+- Baseline opinion - opinion after initial equilibrium found on spacial network
 
-Started to generate some more interesting results.
-
-Impact of number of conections is interesting.
-
-Too many and majority always dominates
-Too few and minority cannot spread
+- Final opinion - opinion after equilibrium found with revised network after influencer group set up
 
 
-CHANGES
-Combined spread opinion routines into single routine voting across all links.
+2. Randomly assign yes/no opinion to population to prescribed initial opinion percentage
+
+
+
+
+3. Run voting model to initial equilibrium based on above.
+Set baseline opinion
+
+
+4. Create a group with prescribed percentage of total population with prescribed existing opinion distribution
+
+eg. if prescribed distribution os 60% and total population is 100 - randomly select 60 people with current opinion "yes" and 40 with current opinion "no" to add to this group
+
+Randomly add additional connections between group members using same random link generation approach except without proximity condition.
+
+Revise influence and opinion thresholds based on prescribed inputs.
+
+
+
+5. Run voting model to new equilibrium
+
+
+Notes
+
+Try initial experiment with influence group size  0 to determine effect of total-population, seed opinion and number of links on opinion equilibria achieved
+
+eg. too many links - majority opinion dominates
+too few links - limited opinion spread
+
+region of interest looks like
+
+6-10 links
+initial opinion percent around 45
+
+
+For influence group, potential tipping behavaiour try
+
+default opinion and influence 0.5 for total population
+
+opinion and influence for group 0.7/0.8 . i.e they are more likely to persuade and less lkely to change than genaral population
+
+set starting group opinion percent say 60 
+
+obviously if too small it will get dominated by genaral population
+
+if too big it will not have enough room to move to influence others within group to influence others outside group ("preaching to the converted")
+
+
+note that running the same parameters can produce quite different results - it is quite sensitive to the random generation of network topology and opinion distribution - so we will need to average over a number of runs
+
+I had a first go at a simple behavior space run.
+
+
+Things to do 
+
+Would be good to sanity check overall approach, do some testing, see if any bugs, review code and model for possible improvements
+
+Any ideas on how to better visualise for demo - plots, monitors etc.?
+
+Devlop some experiments in behavior space and start to look at results.
+
+Start drafting presentation - I have a few thoughts which I will start adding.
+Probably won't get much more time today but will have some time tomorrow.
+
+Let me know if you want to have another chat over weekend - I'm out tonight (sat) and middle of the day on Sunday. 
 
 
 
@@ -746,7 +825,7 @@ This model demonstrates the spread of opinion through a network with minority gr
 
 It uses the network creation approach of the "Virus on a Network" model [1] to create an initial spacial network.
 
-With an initial opinion distribution set, the model determines a baseline equilibrium opinion distribution for the special network.
+With an initial opinion distribution set, the model determines a baseline equilibrium opinion distribution for the spacial network.
 
 A minority group network is then established which promotes the yes opinion.
 
@@ -1118,6 +1197,36 @@ NetLogo 6.1.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="Baseline as function of seed and links" repetitions="1" runMetricsEveryStep="false">
+    <go>go</go>
+    <metric>count turtles with [baseline-opinion = "yes"]</metric>
+    <metric>count turtles with [final-opinion = "yes"]</metric>
+    <steppedValueSet variable="average-connections" first="5" step="5" last="10"/>
+    <steppedValueSet variable="seed-opinion-percent" first="10" step="10" last="50"/>
+    <enumeratedValueSet variable="group-opinion-threshold">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="total-population">
+      <value value="100"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="initial-group-opinion-percent">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="group-percent">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="group-influence">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="default-opinion-threshold">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="default-influence">
+      <value value="1"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
