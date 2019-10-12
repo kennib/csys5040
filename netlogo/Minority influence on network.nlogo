@@ -1,4 +1,4 @@
-globals [old-total new-total repeat-totals]
+globals [old-total new-total repeat-totals minority-group-added]
 
 ;; breed for initial spacial network
 undirected-link-breed [spacial-links spacial-link]
@@ -81,6 +81,7 @@ end
 
 
 to setup-baseline-opinion
+  set minority-group-added false
   set repeat-totals 0
   set old-total 0
 
@@ -129,7 +130,8 @@ end
 ;;
 
 
-to setup-group-network
+to setup-minority-group-network
+  set minority-group-added true
   set repeat-totals 0
   let group-size total-population * group-percent / 100
 
@@ -179,8 +181,6 @@ end
 to setup
  setup-baseline-network
  setup-baseline-opinion
- set-baseline-equilibrium
- setup-group-network
 end
 
 ;;
@@ -192,7 +192,9 @@ to go
   spread-opinion
   tick
 
-  if equilibrium [ stop ]
+  ifelse minority-group-added
+  [ if equilibrium [ stop ] ]
+  [ if equilibrium [ setup-minority-group-network ] ]
 end
 
 to decide-minority  ;; turtle procedure
@@ -425,7 +427,7 @@ total-population
 total-population
 10
 1000
-2000.0
+1000.0
 5
 1
 NIL
@@ -477,8 +479,8 @@ BUTTON
 360
 219
 393
-4. Set up influencer group
-setup-group-network
+4. Set up minority group
+setup-minority-group-network
 NIL
 1
 T
@@ -498,7 +500,7 @@ group-percent
 group-percent
 0
 100
-30.0
+8.0
 1
 1
 NIL
@@ -713,7 +715,7 @@ group-influence
 group-influence
 0
 1
-0.8
+1.0
 0.1
 1
 NIL
@@ -1267,7 +1269,8 @@ NetLogo 6.1.0
     <go>go</go>
     <timeLimit steps="1000"/>
     <exitCondition>equilibrium</exitCondition>
-    <metric>current-opinion-percent</metric>
+    <metric>current-minority-opinion-percent</metric>
+    <metric>current-majority-opinion-percent</metric>
     <metric>opinion-change-percent</metric>
     <metric>current-lean</metric>
     <metric>opinion-overturned</metric>
@@ -1298,6 +1301,44 @@ NetLogo 6.1.0
     <enumeratedValueSet variable="group-influence">
       <value value="0.8"/>
     </enumeratedValueSet>
+  </experiment>
+  <experiment name="How a minority group can change opinions over time" repetitions="3" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="1000"/>
+    <exitCondition>equilibrium</exitCondition>
+    <metric>baseline-opinion-percent</metric>
+    <metric>current-minority-opinion-percent</metric>
+    <metric>current-majority-opinion-percent</metric>
+    <metric>opinion-change-percent</metric>
+    <metric>baseline-lean</metric>
+    <metric>current-lean</metric>
+    <metric>opinion-overturned</metric>
+    <enumeratedValueSet variable="total-population">
+      <value value="2000"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="average-connections">
+      <value value="6"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="minority-opinion-percent">
+      <value value="40"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="group-percent">
+      <value value="30"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="initial-group-opinion-percent">
+      <value value="70"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="default-opinion-threshold">
+      <value value="0.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="group-opinion-threshold">
+      <value value="0.7"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="default-influence">
+      <value value="0.1"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="group-influence" first="0.1" step="0.1" last="1"/>
   </experiment>
 </experiments>
 @#$#@#$#@
