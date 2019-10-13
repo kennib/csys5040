@@ -1,4 +1,4 @@
-globals [old-total new-total repeat-totals minority-group-added]
+globals [old-total new-total repeat-totals minority-movement-added]
 
 ;; breed for initial spacial network
 undirected-link-breed [spacial-links spacial-link]
@@ -12,7 +12,7 @@ turtles-own
   final-opinion
   opinion-threshold
   influence
-  group
+  movement
 ]
 ;; influence weight reflects strength of link - treated as symetrical ie. same in both directions in current model.
 ;; used to weight influence of neighbours opinion
@@ -30,7 +30,7 @@ links-own
 ;;
 to setup-baseline-network
   clear-all
-  set minority-group-added false
+  set minority-movement-added false
   setup-people
   setup-links
   reset-ticks
@@ -44,10 +44,10 @@ to setup-people
   [
     ; for visual reasons, we don't put any people *too* close to the edges
     setxy (random-xcor * 0.95) (random-ycor * 0.95)
-    set opinion-threshold default-opinion-threshold
+    set opinion-threshold default-opinion-change-threshold
     set influence default-influence
     set color white
-    set group 0]
+    set movement 0]
 end
 
 ;;
@@ -82,7 +82,7 @@ end
 
 
 to setup-baseline-opinion
-  set minority-group-added false
+  set minority-movement-added false
   set repeat-totals 0
   set old-total 0
 
@@ -104,7 +104,7 @@ to set-baseline-equilibrium
 end
 
 ;;
-;; run voting model to equilibrium for revised network with group links
+;; run voting model to equilibrium for revised network with movement links
 
 
 to set-new-equilibrium
@@ -126,37 +126,37 @@ to find-equilibrium
 end
 
 ;;
-;; create group based on group size and required group opinion distribution
-;; generate links between group members
+;; create movement based on movement size and required movement opinion distribution
+;; generate links between movement members
 ;;
 
 
-to setup-minority-group-network
-  set minority-group-added true
+to setup-minority-movement
+  set minority-movement-added true
   set repeat-totals 0
-  let group-size total-population * group-percent / 100
+  let movement-size total-population * movement-percent / 100
 
-  let minority-num (initial-group-opinion-percent * group-size) / 100
-  let majority-num ((100 - initial-group-opinion-percent) * group-size) / 100
+  let minority-num (initial-movement-opinion-percent * movement-size) / 100
+  let majority-num ((100 - initial-movement-opinion-percent) * movement-size) / 100
 
 
-  ask n-of (min list minority-num current-minority-opinion-count) current-minority-opinion [set group 1]
-  ask n-of (min list majority-num current-majority-opinion-count) current-majority-opinion [set group 1]
+  ask n-of (min list minority-num current-minority-opinion-count) current-minority-opinion [set movement 1]
+  ask n-of (min list majority-num current-majority-opinion-count) current-majority-opinion [set movement 1]
 
-  ask turtles with [group = 1]
+  ask turtles with [movement = 1]
   [
-    set opinion-threshold group-opinion-threshold
-    set influence group-influence
+    set opinion-threshold movement-opinion-change-threshold
+    set influence movement-influence
   ]
 
 
- let group-links (average-connections * group-size) / 2
- while [count social-links < group-links]
+ let movement-links (average-connections * movement-size) / 2
+ while [count social-links < movement-links]
  [
    ask turtles
    [
-     if group = 1 [
-       let choice (one-of (other turtles with [group = 1]))
+     if movement = 1 [
+       let choice (one-of (other turtles with [movement = 1]))
        if choice != nobody [ create-social-link-with choice ]
      ]
    ]
@@ -172,7 +172,7 @@ end
 ;;
 ;; set up model
 ;; network creation and initial equilibrium
-;; group creation
+;; movement creation
 ;;
 
 to setup
@@ -189,9 +189,9 @@ to go
   spread-opinion
   tick
 
-  ifelse minority-group-added
+  ifelse minority-movement-added
   [ if equilibrium [ stop ] ]
-  [ if equilibrium [ setup-minority-group-network ] ]
+  [ if equilibrium [ setup-minority-movement ] ]
 end
 
 to decide-minority  ;; turtle procedure
@@ -251,16 +251,16 @@ to spread-opinion
     [ set repeat-totals 0 ]
 end
 
-to show-group
-;; displays only the focal minority group with its connections
+to show-movement
+;; displays only the focal minority movement with its connections
 
   show-all
-  ask turtles with [group = 1]
+  ask turtles with [movement = 1]
   [
     set size 3
   ]
 
-  ask turtles with [group != 1]
+  ask turtles with [movement != 1]
   [
     hide-turtle
     ask my-links [hide-link]
@@ -294,7 +294,7 @@ end
 
 
 to reset-opinion-threshold
-  ask turtles [set opinion-threshold default-opinion-threshold]
+  ask turtles [set opinion-threshold default-opinion-change-threshold]
 end
 
 
@@ -357,10 +357,10 @@ end
 ; See Info tab for full copyright and license.
 @#$#@#$#@
 GRAPHICS-WINDOW
-456
-19
-915
-479
+516
+17
+975
+477
 -1
 -1
 11.0
@@ -418,10 +418,10 @@ NIL
 0
 
 PLOT
-936
-18
-1333
-205
+1009
+19
+1406
+206
 Opinion %
 time
 % of nodes
@@ -435,7 +435,7 @@ true
 PENS
 "minority" 1.0 0 -13345367 true "" "plot current-minority-opinion-percent"
 "majority" 1.0 0 -2674135 true "" "plot current-majority-opinion-percent"
-"minority group started" 1.0 0 -7500403 true "" "if-else minority-group-added\n  [plot 100]\n  [plot 0]"
+"movement started" 1.0 0 -11053225 true "" "if-else minority-movement-added\n  [plot 100]\n  [plot 0]"
 
 SLIDER
 20
@@ -461,7 +461,7 @@ minority-opinion-percent
 minority-opinion-percent
 1
 100
-35.0
+45.0
 1
 1
 NIL
@@ -483,9 +483,9 @@ NIL
 HORIZONTAL
 
 MONITOR
-1180
+1206
 276
-1323
+1349
 321
 current opinion
 count turtles with [current-opinion = \"yes\"]
@@ -496,10 +496,10 @@ count turtles with [current-opinion = \"yes\"]
 BUTTON
 27
 360
-219
+235
 393
-4. Set up minority group
-setup-minority-group-network
+4. Set up minority movement
+setup-minority-movement\n
 NIL
 1
 T
@@ -515,32 +515,32 @@ SLIDER
 267
 197
 300
-group-percent
-group-percent
+movement-percent
+movement-percent
 0
 100
-26.0
+15.0
 1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-1181
-327
-1332
-372
-group current opinion
-count turtles with [current-opinion = \"yes\" and group = 1]
+1206
+329
+1384
+374
+movement current opinion
+count turtles with [current-opinion = \"minority\" and movement\n = 1]
 17
 1
 11
 
 BUTTON
 24
-153
+156
 217
-186
+189
 2. Set up  baseline opinion
 setup-baseline-opinion
 NIL
@@ -554,12 +554,12 @@ NIL
 1
 
 BUTTON
-470
-500
-626
-533
-show cultural group
-show-group
+505
+501
+661
+534
+show movement
+show-movement
 NIL
 1
 T
@@ -571,10 +571,10 @@ NIL
 1
 
 BUTTON
-814
-502
-895
-535
+849
+501
+930
+534
 show all
 show-all
 NIL
@@ -612,13 +612,13 @@ current-opinion-percent
 SLIDER
 201
 269
-409
+467
 302
-initial-group-opinion-percent
-initial-group-opinion-percent
+initial-movement-opinion-percent
+initial-movement-opinion-percent
 0
 100
-75.0
+67.0
 1
 1
 NIL
@@ -638,18 +638,18 @@ count turtles with [baseline-opinion = \"yes\"]
 MONITOR
 1010
 330
-1166
+1192
 375
-group baseline opinion
-count turtles with [baseline-opinion = \"yes\" and group = 1]
+movement baseline opinion
+count turtles with [baseline-opinion = \"minority\" and movement = 1]
 17
 1
 11
 
 MONITOR
-1038
+1015
 460
-1192
+1169
 505
 total opinion change
 (count turtles with [current-opinion = \"yes\"]) -\n(count turtles with [baseline-opinion = \"yes\"])
@@ -658,30 +658,30 @@ total opinion change
 11
 
 MONITOR
-1036
+1013
 412
-1195
+1190
 457
-group opinion change
-(count turtles with [current-opinion = \"yes\"and group = 1]) -\n(count turtles with [baseline-opinion = \"yes\" and group = 1])
+movement opinion change
+(count turtles with [current-opinion = \"minority\" and movement = 1]) -\n(count turtles with [baseline-opinion = \"minority\" and movement = 1])
 17
 1
 11
 
 TEXTBOX
-1203
-438
-1353
-480
+1204
+443
+1354
+485
 Trying to find small group change with large total change
 11
 0.0
 1
 
 BUTTON
-630
+668
 501
-800
+838
 534
 show spacial network
 show-spacial-network
@@ -696,12 +696,12 @@ NIL
 1
 
 SLIDER
-236
-153
-427
-186
-default-opinion-threshold
-default-opinion-threshold
+251
+156
+515
+189
+default-opinion-change-threshold
+default-opinion-change-threshold
 0
 1
 0.2
@@ -711,9 +711,9 @@ NIL
 HORIZONTAL
 
 SLIDER
-239
+251
 116
-428
+440
 149
 default-influence
 default-influence
@@ -726,15 +726,15 @@ NIL
 HORIZONTAL
 
 SLIDER
-212
-319
-384
-352
-group-influence
-group-influence
+317
+318
+494
+351
+movement-influence
+movement-influence
 0
 1
-0.5
+0.7
 0.1
 1
 NIL
@@ -743,23 +743,23 @@ HORIZONTAL
 SLIDER
 24
 318
-206
+310
 351
-group-opinion-threshold
-group-opinion-threshold
+movement-opinion-change-threshold
+movement-opinion-change-threshold
 0
 1
-0.2
+0.5
 0.1
 1
 NIL
 HORIZONTAL
 
 BUTTON
-26
-198
-219
-231
+24
+199
+217
+232
 3. Set baseline equilibrium
 set-baseline-equilibrium
 NIL
@@ -818,15 +818,15 @@ NIL
 1
 
 SLIDER
-237
-195
-427
-228
+252
+198
+442
+231
 opinion-fluctuation
 opinion-fluctuation
 0
 1
-0.3
+0.4
 0.1
 1
 NIL
