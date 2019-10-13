@@ -30,6 +30,7 @@ links-own
 ;;
 to setup-baseline-network
   clear-all
+  set minority-group-added false
   setup-people
   setup-links
   reset-ticks
@@ -139,12 +140,8 @@ to setup-minority-group-network
   let majority-num ((100 - initial-group-opinion-percent) * group-size) / 100
 
 
-  ask n-of minority-num turtles with [current-opinion = "minority"]
-  [set group 1]
-
-
-  ask n-of majority-num turtles with [current-opinion = "majority"]
-  [set group 1]
+  ask n-of (min list minority-num current-minority-opinion-count) current-minority-opinion [set group 1]
+  ask n-of (min list majority-num current-majority-opinion-count) current-majority-opinion [set group 1]
 
   ask turtles with [group = 1]
   [
@@ -210,7 +207,7 @@ end
 
 to spread-opinion
 ;;  opinion of person is determined from weighted average of opinions of connections and likelihood of person to change opinion
-;;  ie sum of link weights/influnce of neighbours with minority opinion is compared to sum of link weights/influence with the majority opinionto determine winning opinion
+;;  ie sum of link weights/influnce of neighbours with minority opinion is compared to the average of the link weights*influence with the majority opinion to determine winning opinion
 ;;  then opinion-threshold is used to determine if person will adopt that opinion
 ;;
   set old-total count turtles with [current-opinion = "minority"]
@@ -223,21 +220,26 @@ to spread-opinion
     set minority-weight 0
     set majority-weight 0
 
+    let num-links count my-links
+
     ask my-links
     [
       if [current-opinion] of other-end = "minority"
       [
-        set minority-weight  minority-weight + ([weight] of self) * ([influence] of other-end)
+        set minority-weight  minority-weight + ([weight] of self) * ([influence] of other-end) / num-links
       ]
       if [current-opinion] of other-end = "majority"
       [
-         set majority-weight  majority-weight + ([weight] of self) * ([influence] of other-end)
+         set majority-weight  majority-weight + ([weight] of self) * ([influence] of other-end) / num-links
       ]
     ]
 
-    if  minority-weight > majority-weight and random 10 > opinion-threshold * 10
+    set minority-weight minority-weight + random-float opinion-fluctuation - (opinion-fluctuation / 2)
+    set majority-weight majority-weight + random-float opinion-fluctuation - (opinion-fluctuation / 2)
+
+    if  minority-weight > majority-weight + opinion-threshold
       [ decide-minority ]
-    if  minority-weight < majority-weight and random 10 > opinion-threshold * 10
+    if  majority-weight > minority-weight + opinion-threshold
       [ decide-majority ]
 
   ]
@@ -302,12 +304,28 @@ to-report equilibrium
   report repeat-totals >= 5
 end
 
+to-report current-minority-opinion []
+  report turtles with [current-opinion = "minority"]
+end
+
+to-report current-majority-opinion[]
+  report turtles with [current-opinion = "majority"]
+end
+
+to-report current-minority-opinion-count []
+  report count current-minority-opinion
+end
+
+to-report current-majority-opinion-count []
+  report count current-majority-opinion
+end
+
 to-report current-minority-opinion-percent []
-  report (count turtles with [current-opinion = "minority"] / total-population) * 100
+  report (current-minority-opinion-count / total-population) * 100
 end
 
 to-report current-majority-opinion-percent []
-  report (count turtles with [current-opinion = "majority"] / total-population) * 100
+  report (current-majority-opinion-count / total-population) * 100
 end
 
 to-report baseline-opinion-percent []
@@ -411,12 +429,13 @@ time
 40.0
 0.0
 100.0
-false
+true
 true
 "" ""
 PENS
 "minority" 1.0 0 -13345367 true "" "plot current-minority-opinion-percent"
 "majority" 1.0 0 -2674135 true "" "plot current-majority-opinion-percent"
+"minority group started" 1.0 0 -7500403 true "" "if-else minority-group-added\n  [plot 100]\n  [plot 0]"
 
 SLIDER
 20
@@ -442,7 +461,7 @@ minority-opinion-percent
 minority-opinion-percent
 1
 100
-40.0
+35.0
 1
 1
 NIL
@@ -500,7 +519,7 @@ group-percent
 group-percent
 0
 100
-8.0
+26.0
 1
 1
 NIL
@@ -599,7 +618,7 @@ initial-group-opinion-percent
 initial-group-opinion-percent
 0
 100
-70.0
+75.0
 1
 1
 NIL
@@ -685,7 +704,7 @@ default-opinion-threshold
 default-opinion-threshold
 0
 1
-0.5
+0.2
 0.1
 1
 NIL
@@ -700,7 +719,7 @@ default-influence
 default-influence
 0
 1
-0.1
+0.5
 0.1
 1
 NIL
@@ -715,7 +734,7 @@ group-influence
 group-influence
 0
 1
-1.0
+0.5
 0.1
 1
 NIL
@@ -730,7 +749,7 @@ group-opinion-threshold
 group-opinion-threshold
 0
 1
-0.7
+0.2
 0.1
 1
 NIL
@@ -797,6 +816,21 @@ NIL
 NIL
 NIL
 1
+
+SLIDER
+237
+195
+427
+228
+opinion-fluctuation
+opinion-fluctuation
+0
+1
+0.3
+0.1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 Method 
