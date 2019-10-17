@@ -1,4 +1,4 @@
-globals [old-total new-total repeat-totals minority-movement-added]
+globals [old-total new-total repeat-totals minority-movement-added display-mode]
 
 ;; breed for initial spacial network
 undirected-link-breed [spacial-links spacial-link]
@@ -47,7 +47,8 @@ to setup-people
     set opinion-threshold default-opinion-change-threshold
     set influence default-influence
     set color white
-    set movement 0]
+    set movement 0
+  ]
 end
 
 ;;
@@ -136,6 +137,7 @@ to setup-minority-movement
   ask movement-links [ die ]
   ask minority-movement [ set movement 0 ]
 
+  ;; set up movement
   set minority-movement-added true
   set repeat-totals 0
   let movement-size total-population * movement-percent / 100
@@ -147,8 +149,7 @@ to setup-minority-movement
   ask n-of (min list minority-num current-minority-opinion-count) current-minority-opinion [set movement 1]
   ask n-of (min list majority-num current-majority-opinion-count) current-majority-opinion [set movement 1]
 
-  ask minority-movement
-  [
+  ask minority-movement [
     set opinion-threshold movement-opinion-change-threshold
     set influence movement-influence
   ]
@@ -158,10 +159,8 @@ to setup-minority-movement
   let possible-connections minority-movement-count * (minority-movement-count - 1)
   let new-movement-links (min list ideal-connections possible-connections)
 
-  while [count movement-links < new-movement-links]
-  [
-    ask minority-movement
-    [
+  while [count movement-links < new-movement-links] [
+    ask minority-movement [
       let choice one-of other minority-movement
       if choice != nobody [ create-movement-link-with choice ]
     ]
@@ -173,6 +172,9 @@ to setup-minority-movement
   ]
 
   set-baseline-opinion
+
+  ;; update display
+  if display-mode = "movement" [ show-movement ]
 end
 
 
@@ -260,36 +262,38 @@ end
 
 to show-movement
 ;; displays only the focal minority movement with its connections
+  set display-mode "movement"
 
-  show-all
-  ask turtles with [movement = 1]
-  [
+  ask minority-movement [
     set size 3
+    show-turtle
+    ask my-links [ show-link ]
   ]
 
-  ask turtles with [movement != 1]
-  [
+  ask outside-movement [
     hide-turtle
-    ask my-links [hide-link]
+    ask my-links [ hide-link ]
   ]
 end
 
 to show-spacial-network
 ;; shows the initial spacial network
+  set display-mode "spacial"
+
   show-all
-  ask movement-links [hide-link]
+  ask movement-links [ hide-link ]
 end
 
 to show-all
 ;; shows all people and connections
+  set display-mode "all"
 
-  ask turtles
-  [
+  ask turtles [
     set size 1
     show-turtle
   ]
 
-  ask links [show-link]
+  ask links [ show-link ]
 end
 
 
@@ -317,6 +321,10 @@ end
 
 to-report minority-movement
   report turtles with [movement = 1]
+end
+
+to-report outside-movement
+  report turtles with [movement != 1]
 end
 
 to-report current-minority-opinion []
@@ -695,7 +703,7 @@ initial-movement-opinion-percent
 initial-movement-opinion-percent
 0
 100
-67.0
+78.0
 1
 1
 NIL
