@@ -132,6 +132,10 @@ end
 
 
 to setup-minority-movement
+  ;; reset previous movement
+  ask movement-links [ die ]
+  ask minority-movement [ set movement 0 ]
+
   set minority-movement-added true
   set repeat-totals 0
   let movement-size total-population * movement-percent / 100
@@ -592,7 +596,7 @@ movement-percent
 movement-percent
 0
 100
-25.0
+6.0
 1
 1
 NIL
@@ -691,7 +695,7 @@ initial-movement-opinion-percent
 initial-movement-opinion-percent
 0
 100
-50.0
+67.0
 1
 1
 NIL
