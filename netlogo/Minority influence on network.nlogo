@@ -150,22 +150,24 @@ to setup-minority-movement
   ]
 
 
- let movement-links (average-connections * movement-size) / 2
- while [count social-links < movement-links]
- [
-   ask turtles
-   [
-     if movement = 1 [
-       let choice (one-of (other turtles with [movement = 1]))
-       if choice != nobody [ create-social-link-with choice ]
-     ]
-   ]
- ]
+  let movement-links (average-connections * movement-size) / 2
+  while [count social-links < movement-links]
+  [
+    ask turtles
+    [
+      if movement = 1 [
+        let choice (one-of (other turtles with [movement = 1]))
+        if choice != nobody [ create-social-link-with choice ]
+      ]
+    ]
+  ]
 
- ask social-links [
-   set color green
-   set weight 1
- ]
+  ask social-links [
+    set color green
+    set weight 1
+  ]
+
+  set-baseline-opinion
 end
 
 
@@ -194,7 +196,7 @@ to go
   [ if equilibrium [ setup-minority-movement ] ]
 end
 
-to decide-minority  ;; turtle procedure
+to decide-minority ;; turtle procedure
   set current-opinion "minority"
   set color blue
 end
@@ -210,7 +212,7 @@ to spread-opinion
 ;;  ie sum of link weights/influnce of neighbours with minority opinion is compared to the average of the link weights*influence with the majority opinion to determine winning opinion
 ;;  then opinion-threshold is used to determine if person will adopt that opinion
 ;;
-  set old-total count turtles with [current-opinion = "minority"]
+  set old-total current-minority-opinion-count
 
   let minority-weight 0
   let majority-weight 0
@@ -244,7 +246,7 @@ to spread-opinion
 
   ]
 
-  set new-total count turtles with [current-opinion = "minority"]
+  set new-total current-minority-opinion-count
 
   if-else new-total = old-total
     [ set repeat-totals repeat-totals + 1 ]
@@ -298,18 +300,48 @@ to reset-opinion-threshold
 end
 
 
+;;
 ;; Reporters
+;;
 
 to-report equilibrium
   report repeat-totals >= 5
+end
+
+;; Population groups
+
+to-report minority-movement
+  report turtles with [movement = 1]
 end
 
 to-report current-minority-opinion []
   report turtles with [current-opinion = "minority"]
 end
 
-to-report current-majority-opinion[]
+to-report current-majority-opinion []
   report turtles with [current-opinion = "majority"]
+end
+
+to-report current-minority-movement
+  report minority-movement with [current-opinion = "minority"]
+end
+
+to-report baseline-minority-opinion []
+  report turtles with [baseline-opinion = "minority"]
+end
+
+to-report baseline-majority-opinion []
+  report turtles with [baseline-opinion = "majority"]
+end
+
+to-report baseline-minority-movement
+  report minority-movement with [baseline-opinion = "minority"]
+end
+
+;; Population counts
+
+to-report minority-movement-count []
+  report count minority-movement
 end
 
 to-report current-minority-opinion-count []
@@ -320,6 +352,24 @@ to-report current-majority-opinion-count []
   report count current-majority-opinion
 end
 
+to-report current-minority-movement-opinion-count []
+  report count current-minority-movement
+end
+
+to-report baseline-minority-opinion-count []
+  report count baseline-minority-opinion
+end
+
+to-report baseline-majority-opinion-count []
+  report count baseline-majority-opinion
+end
+
+to-report baseline-minority-movement-opinion-count []
+  report count baseline-minority-movement
+end
+
+;; Population percents
+
 to-report current-minority-opinion-percent []
   report (current-minority-opinion-count / total-population) * 100
 end
@@ -328,28 +378,50 @@ to-report current-majority-opinion-percent []
   report (current-majority-opinion-count / total-population) * 100
 end
 
-to-report baseline-opinion-percent []
-  report (count turtles with [baseline-opinion = "minority"] / total-population) * 100
+to-report current-minority-movement-opinion-percent []
+  report (current-minority-movement-opinion-count / minority-movement-count) * 100
 end
 
-to-report current-opinion-percent []
-  report current-minority-opinion-percent
+to-report baseline-minority-opinion-percent []
+  report (baseline-minority-opinion-count / total-population) * 100
 end
 
-to-report baseline-lean []
-  report baseline-opinion-percent - 50
+to-report baseline-majority-opinion-percent []
+  report (baseline-majority-opinion-count / total-population) * 100
 end
 
-to-report current-lean []
-  report current-opinion-percent - 50
+to-report baseline-minority-movement-opinion-percent []
+  report (baseline-minority-movement-opinion-count / minority-movement-count) * 100
 end
 
-to-report opinion-change-percent []
-  report current-opinion-percent - baseline-opinion-percent
+;; Other metrics
+
+to-report minority-movement-opinion-change-count []
+  report current-minority-movement-opinion-count - baseline-minority-movement-opinion-count
 end
 
-to-report opinion-overturned []
-  report current-lean > 0
+to-report total-opinion-change-count []
+  report current-minority-opinion-count - baseline-minority-opinion-count
+end
+
+to-report outside-opinion-change-count []
+  report total-opinion-change-count - minority-movement-opinion-change-count
+end
+
+to-report baseline-minority-lean []
+  report baseline-minority-opinion-percent - 50
+end
+
+to-report current-minority-lean []
+  report current-minority-opinion-percent - 50
+end
+
+to-report minority-opinion-change-percent []
+  report current-minority-opinion-percent - baseline-minority-opinion-percent
+end
+
+to-report majority-opinion-overturned []
+  report current-minority-lean > 0
 end
 
 
@@ -418,10 +490,10 @@ NIL
 0
 
 PLOT
-1009
-19
-1406
-206
+988
+18
+1412
+205
 Opinion %
 time
 % of nodes
@@ -476,19 +548,19 @@ average-connections
 average-connections
 1
 25
-6.0
+8.0
 1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-1206
-276
-1349
-321
-current opinion
-count turtles with [current-opinion = \"yes\"]
+1235
+262
+1412
+307
+current minority opinion
+current-minority-opinion-count
 17
 1
 11
@@ -526,12 +598,12 @@ NIL
 HORIZONTAL
 
 MONITOR
-1206
-329
-1384
-374
+1197
+502
+1411
+547
 movement current opinion
-count turtles with [current-opinion = \"minority\" and movement\n = 1]
+current-minority-movement-opinion-count
 17
 1
 11
@@ -554,10 +626,10 @@ NIL
 1
 
 BUTTON
-505
-501
-661
-534
+535
+483
+691
+516
 show movement
 show-movement
 NIL
@@ -571,10 +643,10 @@ NIL
 1
 
 BUTTON
-849
-501
-930
-534
+879
+483
+960
+516
 show all
 show-all
 NIL
@@ -588,23 +660,23 @@ NIL
 1
 
 MONITOR
-1080
-217
-1198
-262
-baseline opinion %
-baseline-opinion-percent
+1049
+213
+1230
+258
+baseline minority opinion %
+baseline-minority-opinion-percent
 2
 1
 11
 
 MONITOR
-1209
-215
-1330
-260
-current opinion %
-current-opinion-percent
+1235
+213
+1412
+258
+current minority opinion %
+current-minority-opinion-percent
 2
 1
 11
@@ -618,71 +690,61 @@ initial-movement-opinion-percent
 initial-movement-opinion-percent
 0
 100
-67.0
+61.0
 1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-1012
-276
-1165
-321
-baseline opinion
-count turtles with [baseline-opinion = \"yes\"]
+1049
+262
+1230
+307
+baseline minority opinion
+baseline-minority-opinion-count
 17
 1
 11
 
 MONITOR
-1010
-330
+987
+502
 1192
-375
+547
 movement baseline opinion
-count turtles with [baseline-opinion = \"minority\" and movement = 1]
+baseline-minority-movement-opinion-count
 17
 1
 11
 
 MONITOR
-1015
-460
-1169
-505
-total opinion change
-(count turtles with [current-opinion = \"yes\"]) -\n(count turtles with [baseline-opinion = \"yes\"])
+987
+604
+1192
+649
+total minority opinion change
+total-opinion-change-count
 17
 1
 11
 
 MONITOR
-1013
-412
-1190
-457
+987
+553
+1192
+598
 movement opinion change
-(count turtles with [current-opinion = \"minority\" and movement = 1]) -\n(count turtles with [baseline-opinion = \"minority\" and movement = 1])
+minority-movement-opinion-change-count
 17
 1
 11
-
-TEXTBOX
-1204
-443
-1354
-485
-Trying to find small group change with large total change
-11
-0.0
-1
 
 BUTTON
-668
-501
-838
-534
+698
+483
+868
+516
 show spacial network
 show-spacial-network
 NIL
@@ -719,7 +781,7 @@ default-influence
 default-influence
 0
 1
-0.5
+0.6
 0.1
 1
 NIL
@@ -749,7 +811,7 @@ movement-opinion-change-threshold
 movement-opinion-change-threshold
 0
 1
-0.5
+0.2
 0.1
 1
 NIL
@@ -790,10 +852,10 @@ NIL
 1
 
 MONITOR
-1010
-214
-1067
-259
+989
+213
+1046
+258
 seed %
 minority-opinion-percent
 17
@@ -826,11 +888,42 @@ opinion-fluctuation
 opinion-fluctuation
 0
 1
-0.4
+0.1
 0.1
 1
 NIL
 HORIZONTAL
+
+MONITOR
+1197
+553
+1411
+598
+outside opinion change
+outside-opinion-change-count
+17
+1
+11
+
+PLOT
+986
+316
+1412
+497
+Influence
+NIL
+NIL
+0.0
+100.0
+0.0
+1000.0
+true
+true
+"" ""
+PENS
+"movement change" 1.0 0 -13345367 true "" "plot minority-movement-opinion-change-count"
+"outside change" 1.0 0 -1604481 true "" "plot outside-opinion-change-count"
+"movement started" 1.0 0 -12895429 true "" "if-else minority-movement-added\n  [plot 1000]\n  [plot 0]"
 
 @#$#@#$#@
 Method 
