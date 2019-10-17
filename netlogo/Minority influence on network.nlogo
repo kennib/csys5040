@@ -2,8 +2,8 @@ globals [old-total new-total repeat-totals minority-movement-added]
 
 ;; breed for initial spacial network
 undirected-link-breed [spacial-links spacial-link]
-;; breed for cultural links
-undirected-link-breed [social-links social-link]
+;; breed for movement links
+undirected-link-breed [movement-links movement-link]
 
 turtles-own
 [
@@ -143,26 +143,27 @@ to setup-minority-movement
   ask n-of (min list minority-num current-minority-opinion-count) current-minority-opinion [set movement 1]
   ask n-of (min list majority-num current-majority-opinion-count) current-majority-opinion [set movement 1]
 
-  ask turtles with [movement = 1]
+  ask minority-movement
   [
     set opinion-threshold movement-opinion-change-threshold
     set influence movement-influence
   ]
 
 
-  let movement-links (average-connections * movement-size) / 2
-  while [count social-links < movement-links]
+  let ideal-connections (average-connections * movement-size) / 2
+  let possible-connections minority-movement-count * (minority-movement-count - 1)
+  let new-movement-links (min list ideal-connections possible-connections)
+
+  while [count movement-links < new-movement-links]
   [
-    ask turtles
+    ask minority-movement
     [
-      if movement = 1 [
-        let choice (one-of (other turtles with [movement = 1]))
-        if choice != nobody [ create-social-link-with choice ]
-      ]
+      let choice one-of other minority-movement
+      if choice != nobody [ create-movement-link-with choice ]
     ]
   ]
 
-  ask social-links [
+  ask movement-links [
     set color green
     set weight 1
   ]
@@ -272,7 +273,7 @@ end
 to show-spacial-network
 ;; shows the initial spacial network
   show-all
-  ask social-links [hide-link]
+  ask movement-links [hide-link]
 end
 
 to show-all
@@ -690,7 +691,7 @@ initial-movement-opinion-percent
 initial-movement-opinion-percent
 0
 100
-65.0
+50.0
 1
 1
 NIL
