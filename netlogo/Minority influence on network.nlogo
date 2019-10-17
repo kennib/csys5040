@@ -1,4 +1,4 @@
-globals [old-total new-total repeat-totals minority-movement-added display-mode]
+globals [old-total new-total repeat-totals minority-movement-added display-mode colour-mode]
 
 ;; breed for initial spacial network
 undirected-link-breed [spacial-links spacial-link]
@@ -24,16 +24,21 @@ links-own
 [
   weight
 ]
+
 ;;
 ;; create baseline network with prescribed number of people
 ;;
 ;;
 to setup-baseline-network
+  clear-links
   clear-all
   set minority-movement-added false
   setup-people
   setup-links
   reset-ticks
+
+  if display-mode = 0 [ show-all ]
+  if colour-mode = 0 [ opinion-colour-mode ]
 end
 
 ;; create population with input size, set default influence and opinion threshold and initial position (used by link generation)
@@ -81,7 +86,6 @@ end
 ;; randomly assign opinions to people with prescribed minority opinion percent
 ;;
 
-
 to setup-baseline-opinion
   set minority-movement-added false
   set repeat-totals 0
@@ -92,25 +96,28 @@ to setup-baseline-opinion
 
   ask turtles [decide-majority]
   ask n-of baseline-minority turtles [decide-minority]
+  ask turtles [set baseline-opinion current-opinion]
+
   tick
+
+  update-colour
 end
 
 
 ;;
 ;; run voting model to equilibrium for initial spacial network
-
+;;
 to set-baseline-equilibrium
   find-equilibrium
-  ask turtles [set baseline-opinion current-opinion]
 end
 
 ;;
 ;; run voting model to equilibrium for revised network with movement links
-
+;;
 
 to set-new-equilibrium
+  ask turtles [set baseline-opinion current-opinion]
   find-equilibrium
-  ask turtles [set final-opinion current-opinion]
 end
 
 ;;
@@ -131,9 +138,10 @@ end
 ;; generate links between movement members
 ;;
 
-
 to setup-minority-movement
   ;; reset previous movement
+  reset-opinion-threshold
+  reset-influence
   ask movement-links [ die ]
   ask minority-movement [ set movement 0 ]
 
@@ -185,8 +193,9 @@ end
 ;;
 
 to setup
- setup-baseline-network
- setup-baseline-opinion
+  setup-baseline-network
+  setup-baseline-opinion
+  ask turtles [set baseline-opinion current-opinion]
 end
 
 ;;
@@ -205,12 +214,10 @@ end
 
 to decide-minority ;; turtle procedure
   set current-opinion "minority"
-  set color blue
 end
 
 to decide-majority ;; turtle procedure
   set current-opinion "majority"
-  set color red
 end
 
 
@@ -258,7 +265,27 @@ to spread-opinion
   if-else new-total = old-total
     [ set repeat-totals repeat-totals + 1 ]
     [ set repeat-totals 0 ]
+
+  update-colour
 end
+
+to set-baseline-opinion
+;; used to set baseline opinion for comparison before changing settings and running to new equilibrium
+  ask turtles
+     [set baseline-opinion current-opinion]
+end
+
+to reset-opinion-threshold
+  ask turtles [set opinion-threshold default-opinion-change-threshold]
+end
+
+to reset-influence
+  ask turtles [set influence default-influence]
+end
+
+;;
+;; Display modes
+;;
 
 to show-movement
 ;; displays only the focal minority movement with its connections
@@ -297,15 +324,31 @@ to show-all
 end
 
 
-to set-baseline-opinion
-;; used to set baseline opinion for comparison before changing settings and running to new equilibrium
-  ask turtles
-     [set baseline-opinion current-opinion]
+to opinion-colour-mode
+;; shows peoples' opinions
+  set colour-mode "opinion"
+  update-colour
 end
 
+to opinion-change-colour-mode
+;; shows how peoples' opinions changed
+  set colour-mode "opinion change"
+  update-colour
+end
 
-to reset-opinion-threshold
-  ask turtles [set opinion-threshold default-opinion-change-threshold]
+to update-colour
+;; updates the colours of the agents
+  ask turtles [
+    if colour-mode = "opinion" [
+      if current-opinion = "majority" [ set color red ]
+      if current-opinion = "minority" [ set color blue ]
+    ]
+    if colour-mode = "opinion change" [
+      set color grey
+      if current-opinion = "majority" and baseline-opinion = "minority" [ set color red + 2 ]
+      if current-opinion = "minority" and baseline-opinion = "majority" [ set color blue + 2 ]
+    ]
+  ]
 end
 
 
@@ -489,7 +532,7 @@ BUTTON
 7
 216
 62
-518
+556
 NIL
 go
 T
@@ -579,10 +622,10 @@ current-minority-opinion-count
 11
 
 BUTTON
-84
-423
-469
-456
+83
+461
+468
+494
 4. Set up minority movement
 setup-minority-movement\n
 NIL
@@ -596,15 +639,15 @@ NIL
 1
 
 SLIDER
-84
-311
-228
-344
+83
+349
+275
+382
 movement-percent
 movement-percent
 0
 100
-6.0
+37.0
 1
 1
 NIL
@@ -626,7 +669,7 @@ BUTTON
 159
 465
 192
-2. Set up  baseline opinion
+2. Set up baseline opinion
 setup-baseline-opinion
 NIL
 1
@@ -695,10 +738,10 @@ current-minority-opinion-percent
 11
 
 SLIDER
-84
-348
-469
-381
+83
+386
+468
+419
 initial-movement-opinion-percent
 initial-movement-opinion-percent
 0
@@ -771,10 +814,10 @@ NIL
 1
 
 SLIDER
-82
-216
-314
-249
+83
+253
+466
+286
 default-opinion-change-threshold
 default-opinion-change-threshold
 0
@@ -801,10 +844,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-233
-311
-469
-344
+280
+349
+468
+382
 movement-influence
 movement-influence
 0
@@ -816,10 +859,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-84
-385
+83
+423
 469
-418
+456
 movement-opinion-change-threshold
 movement-opinion-change-threshold
 0
@@ -832,9 +875,9 @@ HORIZONTAL
 
 BUTTON
 83
-253
+290
 467
-286
+323
 3. Set baseline equilibrium
 set-baseline-equilibrium
 NIL
@@ -849,9 +892,9 @@ NIL
 
 BUTTON
 83
-485
+523
 469
-518
+556
 5. Find new equilibrium
 set-new-equilibrium
 NIL
@@ -893,15 +936,15 @@ NIL
 1
 
 SLIDER
-319
+83
 216
-467
+466
 249
 opinion-fluctuation
 opinion-fluctuation
 0
 1
-0.1
+0.0
 0.1
 1
 NIL
@@ -937,6 +980,50 @@ PENS
 "movement change" 1.0 0 -13345367 true "" "if minority-movement-added\n  [plot minority-movement-opinion-change-count]"
 "outside change" 1.0 0 -1604481 true "" "if minority-movement-added\n  [plot outside-opinion-change-count]"
 "" 1.0 0 -16777216 true "" "plot 0"
+
+BUTTON
+634
+531
+750
+564
+opinion
+opinion-colour-mode
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+TEXTBOX
+553
+539
+642
+557
+colour mode:
+11
+0.0
+1
+
+BUTTON
+755
+531
+882
+564
+opinion change
+opinion-change-colour-mode
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 Method 
