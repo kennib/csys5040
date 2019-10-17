@@ -746,7 +746,7 @@ initial-movement-opinion-percent
 initial-movement-opinion-percent
 0
 100
-89.0
+65.0
 1
 1
 NIL
@@ -837,7 +837,7 @@ default-influence
 default-influence
 0
 1
-0.5
+0.2
 0.1
 1
 NIL
@@ -852,7 +852,7 @@ movement-influence
 movement-influence
 0
 1
-0.5
+3.9
 0.1
 1
 NIL
@@ -1596,6 +1596,43 @@ NetLogo 6.1.0
     </enumeratedValueSet>
     <enumeratedValueSet variable="default-influence">
       <value value="0.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="default-opinion-change-threshold">
+      <value value="0.1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="opinion-fluctuation">
+      <value value="0.1"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="Movement influence and size" repetitions="1" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>minority-movement-opinion-change-count</metric>
+    <metric>outside-opinion-change-count</metric>
+    <metric>total-opinion-change-count</metric>
+    <metric>baseline-minority-lean</metric>
+    <metric>current-minority-lean</metric>
+    <metric>minority-opinion-change-percent</metric>
+    <metric>majority-opinion-overturned</metric>
+    <enumeratedValueSet variable="total-population">
+      <value value="1000"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="average-connections">
+      <value value="8"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="minority-opinion-percent">
+      <value value="45"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="movement-percent" first="0" step="2" last="50"/>
+    <enumeratedValueSet variable="initial-movement-opinion-percent">
+      <value value="65"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="movement-influence" first="0.1" step="0.02" last="1"/>
+    <enumeratedValueSet variable="movement-opinion-change-threshold">
+      <value value="0.1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="default-influence">
+      <value value="0.2"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="default-opinion-change-threshold">
       <value value="0.1"/>
