@@ -429,9 +429,9 @@ end
 ; See Info tab for full copyright and license.
 @#$#@#$#@
 GRAPHICS-WINDOW
-516
+496
 17
-975
+955
 477
 -1
 -1
@@ -456,10 +456,10 @@ ticks
 30.0
 
 BUTTON
-21
-55
-213
-95
+83
+56
+466
+96
 1. Set up baseline network
 setup-baseline-network
 NIL
@@ -473,10 +473,10 @@ NIL
 1
 
 BUTTON
-262
-493
-357
-533
+7
+216
+62
+518
 NIL
 go
 T
@@ -510,10 +510,10 @@ PENS
 "movement started" 1.0 0 -11053225 true "" "if-else minority-movement-added\n  [plot 100]\n  [plot 0]"
 
 SLIDER
-20
-10
-225
-43
+84
+19
+291
+52
 total-population
 total-population
 10
@@ -525,10 +525,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-23
-115
-236
-148
+81
+122
+275
+155
 minority-opinion-percent
 minority-opinion-percent
 1
@@ -540,10 +540,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-231
-10
-436
-43
+296
+19
+466
+52
 average-connections
 average-connections
 1
@@ -566,10 +566,10 @@ current-minority-opinion-count
 11
 
 BUTTON
-27
-360
-235
-393
+84
+423
+469
+456
 4. Set up minority movement
 setup-minority-movement\n
 NIL
@@ -583,15 +583,15 @@ NIL
 1
 
 SLIDER
-25
-267
-197
-300
+84
+311
+228
+344
 movement-percent
 movement-percent
 0
 100
-15.0
+25.0
 1
 1
 NIL
@@ -609,10 +609,10 @@ current-minority-movement-opinion-count
 11
 
 BUTTON
-24
-156
-217
-189
+81
+159
+465
+192
 2. Set up  baseline opinion
 setup-baseline-opinion
 NIL
@@ -626,10 +626,10 @@ NIL
 1
 
 BUTTON
-535
-483
-691
-516
+496
+485
+662
+518
 show movement
 show-movement
 NIL
@@ -643,10 +643,10 @@ NIL
 1
 
 BUTTON
-879
-483
-960
-516
+842
+485
+956
+518
 show all
 show-all
 NIL
@@ -682,15 +682,15 @@ current-minority-opinion-percent
 11
 
 SLIDER
-201
-269
-467
-302
+84
+348
+469
+381
 initial-movement-opinion-percent
 initial-movement-opinion-percent
 0
 100
-61.0
+65.0
 1
 1
 NIL
@@ -741,10 +741,10 @@ minority-movement-opinion-change-count
 11
 
 BUTTON
-698
-483
-868
-516
+667
+485
+837
+518
 show spacial network
 show-spacial-network
 NIL
@@ -758,10 +758,10 @@ NIL
 1
 
 SLIDER
-251
-156
-515
-189
+82
+216
+314
+249
 default-opinion-change-threshold
 default-opinion-change-threshold
 0
@@ -773,40 +773,40 @@ NIL
 HORIZONTAL
 
 SLIDER
-251
-116
-440
-149
+279
+122
+465
+155
 default-influence
 default-influence
 0
 1
-0.6
+0.5
 0.1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-317
-318
-494
-351
+233
+311
+469
+344
 movement-influence
 movement-influence
 0
 1
-0.7
+0.5
 0.1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-24
-318
-310
-351
+84
+385
+469
+418
 movement-opinion-change-threshold
 movement-opinion-change-threshold
 0
@@ -818,10 +818,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-24
-199
-217
-232
+83
+253
+467
+286
 3. Set baseline equilibrium
 set-baseline-equilibrium
 NIL
@@ -835,10 +835,10 @@ NIL
 1
 
 BUTTON
-27
-418
-201
-451
+83
+485
+469
+518
 5. Find new equilibrium
 set-new-equilibrium
 NIL
@@ -863,10 +863,10 @@ minority-opinion-percent
 11
 
 BUTTON
-170
-492
-249
-533
+8
+18
+63
+193
 NIL
 setup
 NIL
@@ -880,10 +880,10 @@ NIL
 1
 
 SLIDER
-252
-198
-442
-231
+319
+216
+467
+249
 opinion-fluctuation
 opinion-fluctuation
 0
@@ -910,20 +910,20 @@ PLOT
 316
 1412
 497
-Influence
+Change
 NIL
 NIL
 0.0
 100.0
 0.0
-1000.0
+100.0
 true
 true
 "" ""
 PENS
-"movement change" 1.0 0 -13345367 true "" "plot minority-movement-opinion-change-count"
-"outside change" 1.0 0 -1604481 true "" "plot outside-opinion-change-count"
-"movement started" 1.0 0 -12895429 true "" "if-else minority-movement-added\n  [plot 1000]\n  [plot 0]"
+"movement change" 1.0 0 -13345367 true "" "if minority-movement-added\n  [plot minority-movement-opinion-change-count]"
+"outside change" 1.0 0 -1604481 true "" "if minority-movement-added\n  [plot outside-opinion-change-count]"
+"" 1.0 0 -16777216 true "" "plot 0"
 
 @#$#@#$#@
 Method 
