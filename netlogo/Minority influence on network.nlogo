@@ -1,9 +1,9 @@
-globals [old-total new-total repeat-totals minority-movement-added display-mode colour-mode]
+globals [old-total new-total repeat-totals demographic-activated display-mode colour-mode]
 
-;; breed for initial spacial network
+;; Breed for initial spacial network
 undirected-link-breed [spacial-links spacial-link]
-;; breed for movement links
-undirected-link-breed [movement-links movement-link]
+;; Breed for activated demographic links
+undirected-link-breed [demographic-links demographic-link]
 
 turtles-own
 [
@@ -12,13 +12,12 @@ turtles-own
   final-opinion
   opinion-threshold
   influence
-  movement
+  activated
 ]
-;; influence weight reflects strength of link - treated as symetrical ie. same in both directions in current model.
-;; used to weight influence of neighbours opinion
 
 ;;
-;; Link weight used in voting model as placeholder defaulted to 1 - doesn't currently have input sliders
+;; Link weight used in voting model as placeholder
+;; defaulted to 1 - doesn't currently have input sliders
 ;;
 links-own
 [
@@ -26,13 +25,13 @@ links-own
 ]
 
 ;;
-;; create baseline network with prescribed number of people
-;;
+;; Create baseline network
+;; with prescribed number of people
 ;;
 to setup-baseline-network
   clear-links
   clear-all
-  set minority-movement-added false
+  set demographic-activated false
   setup-people
   setup-links
   reset-ticks
@@ -41,53 +40,54 @@ to setup-baseline-network
   if colour-mode = 0 [ opinion-colour-mode ]
 end
 
-;; create population with input size, set default influence and opinion threshold and initial position (used by link generation)
-
+;;
+;; Create population
+;; using input size
+;; set default influence and opinion threshold
+;; and initial position (used by link generation)
+;;
 to setup-people
   set-default-shape turtles "person"
-  create-turtles total-population
-  [
-    ; for visual reasons, we don't put any people *too* close to the edges
+  create-turtles total-population [
+    ;; For visual reasons, we don't put any people *too* close to the edges
     setxy (random-xcor * 0.95) (random-ycor * 0.95)
     set opinion-threshold default-opinion-change-threshold
     set influence default-influence
     set color white
-    set movement 0
+    set activated 0
   ]
 end
 
 ;;
-;; random network generation and layout approach taken fron "Virus on Network" sample Netlogo model
+;; Random network generation and layout
+;; approach taken fron "Virus on Network" sample Netlogo model
 ;;
-
-
 to setup-links
+  ;; Create links
   let num-links (average-connections * total-population) / 2
-  while [count spacial-links < num-links ]
-  [
-    ask one-of turtles
-    [
+  while [count spacial-links < num-links ] [
+    ask one-of turtles [
       let choice (min-one-of (other turtles with [not spacial-link-neighbor? myself])
                    [distance myself])
       if choice != nobody [ create-spacial-link-with choice ]
     ]
   ]
-  ; make the network look a little prettier
-  repeat 10
-  [
+  ;; Make the network look a little prettier
+  repeat 10 [
     layout-spring turtles spacial-links 0.3 (world-width / (sqrt total-population)) 1
   ]
-  ask spacial-links [set weight default-influence
-                     set color white]
-
+  ask spacial-links [
+    set weight default-influence
+    set color white
+  ]
 end
 
 ;;
-;; randomly assign opinions to people with prescribed minority opinion percent
+;; Randomly assign opinions
+;; to people with prescribed minority opinion percent
 ;;
-
 to setup-baseline-opinion
-  set minority-movement-added false
+  set demographic-activated false
   set repeat-totals 0
   set old-total 0
 
@@ -105,25 +105,26 @@ end
 
 
 ;;
-;; run voting model to equilibrium for initial spacial network
+;; Run voting model to equilibrium
+;;   for the initial spacial network
 ;;
 to set-baseline-equilibrium
   find-equilibrium
 end
 
 ;;
-;; run voting model to equilibrium for revised network with movement links
+;; Run voting model to equilibrium
+;;   for revised network with activated demographic links
 ;;
-
 to set-new-equilibrium
   ask turtles [set baseline-opinion current-opinion]
   find-equilibrium
 end
 
 ;;
-;; run voting model to equilibrium ie. opinion stabilises
+;; Run voting model to equilibrium
+;; i.e, until opinion stabilises
 ;;
-
 to find-equilibrium
   set repeat-totals 0
   while [not equilibrium]
@@ -134,64 +135,62 @@ to find-equilibrium
 end
 
 ;;
-;; create movement based on movement size and required movement opinion distribution
-;; generate links between movement members
+;; Activate a demographic based on size and required opinion distribution
+;; generate links between demographic members
 ;;
-
-to setup-minority-movement
-  ;; reset previous movement
+to setup-activated-demographic
+  ;; Reset previous activated demographic
   reset-opinion-threshold
   reset-influence
-  ask movement-links [ die ]
-  ask minority-movement [ set movement 0 ]
+  ask demographic-links [ die ]
+  ask activated-demographic [ set activated 0 ]
 
-  ;; set up movement
-  set minority-movement-added true
+  ;; Set up new activated demographic
+  set demographic-activated true
   set repeat-totals 0
-  let movement-size total-population * movement-percent / 100
+  let demographic-size total-population * demographic-percent / 100
 
-  let minority-num (initial-movement-opinion-percent * movement-size) / 100
-  let majority-num ((100 - initial-movement-opinion-percent) * movement-size) / 100
+  let minority-num (initial-demographic-opinion-percent * demographic-size) / 100
+  let majority-num ((100 - initial-demographic-opinion-percent) * demographic-size) / 100
 
 
-  ask n-of (min list minority-num current-minority-opinion-count) current-minority-opinion [set movement 1]
-  ask n-of (min list majority-num current-majority-opinion-count) current-majority-opinion [set movement 1]
+  ask n-of (min list minority-num current-minority-opinion-count) current-minority-opinion [set activated 1]
+  ask n-of (min list majority-num current-majority-opinion-count) current-majority-opinion [set activated 1]
 
-  ask minority-movement [
-    set opinion-threshold movement-opinion-change-threshold
-    set influence movement-influence
+  ask activated-demographic [
+    set opinion-threshold demographic-opinion-change-threshold
+    set influence demographic-influence
   ]
 
 
-  let ideal-connections (average-connections * movement-size) / 2
-  let possible-connections minority-movement-count * (minority-movement-count - 1)
-  let new-movement-links (min list ideal-connections possible-connections)
+  let ideal-connections (average-connections * demographic-size) / 2
+  let possible-connections activated-demographic-count * (activated-demographic-count - 1)
+  let new-demographic-links (min list ideal-connections possible-connections)
 
-  while [count movement-links < new-movement-links] [
-    ask minority-movement [
-      let choice one-of other minority-movement
-      if choice != nobody [ create-movement-link-with choice ]
+  while [count demographic-links < new-demographic-links] [
+    ask activated-demographic [
+      let choice one-of other activated-demographic
+      if choice != nobody [ create-demographic-link-with choice ]
     ]
   ]
 
-  ask movement-links [
+  ask demographic-links [
     set color green
     set weight 1
   ]
 
   set-baseline-opinion
 
-  ;; update display
-  if display-mode = "movement" [ show-movement ]
+  ;; Update display
+  if display-mode = "demographic" [ show-demographic ]
 end
 
 
 ;;
-;; set up model
-;; network creation and initial equilibrium
-;; movement creation
+;; Set up model
+;;   Network creation and initial equilibrium
+;;   Activated demographic creation
 ;;
-
 to setup
   setup-baseline-network
   setup-baseline-opinion
@@ -199,38 +198,38 @@ to setup
 end
 
 ;;
-;; run model
-;; final equilibrium
+;; Run model
+;;   Final equilibrium
 ;;
-
 to go
   spread-opinion
   tick
 
-  ifelse minority-movement-added
+  ifelse demographic-activated
   [ if equilibrium [ stop ] ]
-  [ if equilibrium [ setup-minority-movement ] ]
+  [ if equilibrium [ setup-activated-demographic ] ]
 end
 
-to decide-minority ;; turtle procedure
+;; Agent update procedure
+to decide-minority
   set current-opinion "minority"
 end
 
-to decide-majority ;; turtle procedure
+;; Agent update procedure
+to decide-majority
   set current-opinion "majority"
 end
 
-
-to spread-opinion
-;;  opinion of person is determined from weighted average of opinions of connections and likelihood of person to change opinion
-;;  ie sum of link weights/influnce of neighbours with minority opinion is compared to the average of the link weights*influence with the majority opinion to determine winning opinion
-;;  then opinion-threshold is used to determine if person will adopt that opinion
 ;;
+;; Spread opinions between connected agents
+;;
+to spread-opinion
   set old-total current-minority-opinion-count
 
   let minority-weight 0
   let majority-weight 0
 
+  ;; For each person
   ask turtles
   [
     set minority-weight 0
@@ -238,21 +237,22 @@ to spread-opinion
 
     let num-links count my-links
 
-    ask my-links
-    [
-      if [current-opinion] of other-end = "minority"
-      [
-        set minority-weight  minority-weight + ([weight] of self) * ([influence] of other-end) / num-links
+    ;; Find the sum of the influence of my neighbours
+    ;; (the weight is currently always 1)
+    ask my-links [
+      if [current-opinion] of other-end = "minority" [
+        set minority-weight minority-weight + ([weight] of self) * ([influence] of other-end) / num-links
       ]
-      if [current-opinion] of other-end = "majority"
-      [
-         set majority-weight  majority-weight + ([weight] of self) * ([influence] of other-end) / num-links
+      if [current-opinion] of other-end = "majority" [
+         set majority-weight majority-weight + ([weight] of self) * ([influence] of other-end) / num-links
       ]
     ]
 
+    ;; The opinion that the majority of my neighbours hold wins
     set minority-weight minority-weight + random-float opinion-fluctuation - (opinion-fluctuation / 2)
     set majority-weight majority-weight + random-float opinion-fluctuation - (opinion-fluctuation / 2)
 
+    ;; ...assuming my opinion change threshold is reached
     if  minority-weight > majority-weight + opinion-threshold
       [ decide-minority ]
     if  majority-weight > minority-weight + opinion-threshold
@@ -260,59 +260,73 @@ to spread-opinion
 
   ]
 
+  ;; Count changes in opinion
   set new-total current-minority-opinion-count
 
   if-else new-total = old-total
     [ set repeat-totals repeat-totals + 1 ]
     [ set repeat-totals 0 ]
 
+  ;; Update the display
   update-colour
 end
 
+;;
+;; Record the an agent's initial opinion
+;;
 to set-baseline-opinion
-;; used to set baseline opinion for comparison before changing settings and running to new equilibrium
   ask turtles
      [set baseline-opinion current-opinion]
 end
 
+;;
+;; Reset opinion
+;; use for resetting the activated demographic
+;;
 to reset-opinion-threshold
   ask turtles [set opinion-threshold default-opinion-change-threshold]
 end
 
+;;
+;; Reset influence
+;; use for resetting the activated demographic
+;;
 to reset-influence
   ask turtles [set influence default-influence]
 end
 
 ;;
-;; Display modes
+;; Show the activated demographic in the display
 ;;
+to show-demographic
+  set display-mode "demographic"
 
-to show-movement
-;; displays only the focal minority movement with its connections
-  set display-mode "movement"
-
-  ask minority-movement [
+  ask activated-demographic [
     set size 3
     show-turtle
     ask my-links [ show-link ]
   ]
 
-  ask outside-movement [
+  ask outside-demographic [
     hide-turtle
     ask my-links [ hide-link ]
   ]
 end
 
+;;
+;; Show the whole network in the display
+;;
 to show-spacial-network
-;; shows the initial spacial network
   set display-mode "spacial"
 
   show-all
-  ask movement-links [ hide-link ]
+  ask demographic-links [ hide-link ]
 end
 
+;;
+;; Show the both networks in the display
+;;
 to show-all
-;; shows all people and connections
   set display-mode "all"
 
   ask turtles [
@@ -324,20 +338,26 @@ to show-all
 end
 
 
+;;
+;; Show people's opinions
+;;
 to opinion-colour-mode
-;; shows peoples' opinions
   set colour-mode "opinion"
   update-colour
 end
 
+;;
+;; Show the change in people's opinions
+;;
 to opinion-change-colour-mode
-;; shows how peoples' opinions changed
   set colour-mode "opinion change"
   update-colour
 end
 
+;;
+;; Show the agent's colours based on the mode
+;;
 to update-colour
-;; updates the colours of the agents
   ask turtles [
     if colour-mode = "opinion" [
       if current-opinion = "majority" [ set color red ]
@@ -360,14 +380,14 @@ to-report equilibrium
   report repeat-totals >= 5
 end
 
-;; Population groups
+;;   Population groups
 
-to-report minority-movement
-  report turtles with [movement = 1]
+to-report activated-demographic
+  report turtles with [activated = 1]
 end
 
-to-report outside-movement
-  report turtles with [movement != 1]
+to-report outside-demographic
+  report turtles with [activated != 1]
 end
 
 to-report current-minority-opinion []
@@ -378,8 +398,8 @@ to-report current-majority-opinion []
   report turtles with [current-opinion = "majority"]
 end
 
-to-report current-minority-movement
-  report minority-movement with [current-opinion = "minority"]
+to-report current-activated-demographic
+  report activated-demographic with [current-opinion = "minority"]
 end
 
 to-report baseline-minority-opinion []
@@ -390,14 +410,15 @@ to-report baseline-majority-opinion []
   report turtles with [baseline-opinion = "majority"]
 end
 
-to-report baseline-minority-movement
-  report minority-movement with [baseline-opinion = "minority"]
+to-report baseline-activated-demographic
+  report activated-demographic with [baseline-opinion = "minority"]
 end
 
-;; Population counts
 
-to-report minority-movement-count []
-  report count minority-movement
+;;   Population counts
+
+to-report activated-demographic-count []
+  report count activated-demographic
 end
 
 to-report current-minority-opinion-count []
@@ -408,8 +429,8 @@ to-report current-majority-opinion-count []
   report count current-majority-opinion
 end
 
-to-report current-minority-movement-opinion-count []
-  report count current-minority-movement
+to-report current-activated-demographic-opinion-count []
+  report count current-activated-demographic
 end
 
 to-report baseline-minority-opinion-count []
@@ -420,9 +441,10 @@ to-report baseline-majority-opinion-count []
   report count baseline-majority-opinion
 end
 
-to-report baseline-minority-movement-opinion-count []
-  report count baseline-minority-movement
+to-report baseline-activated-demographic-opinion-count []
+  report count baseline-activated-demographic
 end
+
 
 ;; Population percents
 
@@ -434,8 +456,8 @@ to-report current-majority-opinion-percent []
   report (current-majority-opinion-count / total-population) * 100
 end
 
-to-report current-minority-movement-opinion-percent []
-  report (current-minority-movement-opinion-count / minority-movement-count) * 100
+to-report current-activated-demographic-opinion-percent []
+  report (current-activated-demographic-opinion-count / activated-demographic-count) * 100
 end
 
 to-report baseline-minority-opinion-percent []
@@ -446,14 +468,15 @@ to-report baseline-majority-opinion-percent []
   report (baseline-majority-opinion-count / total-population) * 100
 end
 
-to-report baseline-minority-movement-opinion-percent []
-  report (baseline-minority-movement-opinion-count / minority-movement-count) * 100
+to-report baseline-activated-demographic-opinion-percent []
+  report (baseline-activated-demographic-opinion-count / activated-demographic-count) * 100
 end
+
 
 ;; Other metrics
 
-to-report minority-movement-opinion-change-count []
-  report current-minority-movement-opinion-count - baseline-minority-movement-opinion-count
+to-report activated-demographic-opinion-change-count []
+  report current-activated-demographic-opinion-count - baseline-activated-demographic-opinion-count
 end
 
 to-report total-opinion-change-count []
@@ -461,7 +484,7 @@ to-report total-opinion-change-count []
 end
 
 to-report outside-opinion-change-count []
-  report total-opinion-change-count - minority-movement-opinion-change-count
+  report total-opinion-change-count - activated-demographic-opinion-change-count
 end
 
 to-report baseline-minority-lean []
@@ -479,10 +502,6 @@ end
 to-report majority-opinion-overturned []
   report current-minority-lean > 0
 end
-
-
-; Copyright 2008 Uri Wilensky.
-; See Info tab for full copyright and license.
 @#$#@#$#@
 GRAPHICS-WINDOW
 496
@@ -563,7 +582,7 @@ true
 PENS
 "minority" 1.0 0 -13345367 true "" "plot current-minority-opinion-percent"
 "majority" 1.0 0 -2674135 true "" "plot current-majority-opinion-percent"
-"movement started" 1.0 0 -11053225 true "" "if-else minority-movement-added\n  [plot 100]\n  [plot 0]"
+"demographic activated" 1.0 0 -11053225 true "" "if-else demographic-activated\n  [plot 100]\n  [plot 0]"
 
 SLIDER
 84
@@ -626,8 +645,8 @@ BUTTON
 461
 468
 494
-4. Set up minority movement
-setup-minority-movement\n
+4. Activate demographic
+setup-activated-demographic
 NIL
 1
 T
@@ -643,11 +662,11 @@ SLIDER
 349
 275
 382
-movement-percent
-movement-percent
+demographic-percent
+demographic-percent
 0
 100
-30.0
+40.0
 1
 1
 NIL
@@ -658,8 +677,8 @@ MONITOR
 502
 1411
 547
-movement current opinion
-current-minority-movement-opinion-count
+demographic current opinion
+current-activated-demographic-opinion-count
 17
 1
 11
@@ -686,8 +705,8 @@ BUTTON
 485
 662
 518
-show movement
-show-movement
+show demographic
+show-demographic
 NIL
 1
 T
@@ -742,8 +761,8 @@ SLIDER
 386
 468
 419
-initial-movement-opinion-percent
-initial-movement-opinion-percent
+initial-demographic-opinion-percent
+initial-demographic-opinion-percent
 0
 100
 65.0
@@ -768,8 +787,8 @@ MONITOR
 502
 1192
 547
-movement baseline opinion
-baseline-minority-movement-opinion-count
+demographic baseline opinion
+baseline-activated-demographic-opinion-count
 17
 1
 11
@@ -790,8 +809,8 @@ MONITOR
 553
 1192
 598
-movement opinion change
-minority-movement-opinion-change-count
+demographic opinion change
+activated-demographic-opinion-change-count
 17
 1
 11
@@ -822,7 +841,7 @@ default-opinion-change-threshold
 default-opinion-change-threshold
 0
 1
-0.5
+0.0
 0.1
 1
 NIL
@@ -848,11 +867,11 @@ SLIDER
 349
 468
 382
-movement-influence
-movement-influence
+demographic-influence
+demographic-influence
 0
 1
-0.2
+0.1
 0.1
 1
 NIL
@@ -863,8 +882,8 @@ SLIDER
 423
 469
 456
-movement-opinion-change-threshold
-movement-opinion-change-threshold
+demographic-opinion-change-threshold
+demographic-opinion-change-threshold
 0
 1
 0.1
@@ -944,7 +963,7 @@ opinion-fluctuation
 opinion-fluctuation
 0
 1
-0.1
+0.0
 0.1
 1
 NIL
@@ -977,8 +996,8 @@ true
 true
 "" ""
 PENS
-"movement change" 1.0 0 -13345367 true "" "if minority-movement-added\n  [plot minority-movement-opinion-change-count]"
-"outside change" 1.0 0 -1604481 true "" "if minority-movement-added\n  [plot outside-opinion-change-count]"
+"demographic change" 1.0 0 -13345367 true "" "if demographic-activated\n  [plot activated-demographic-opinion-change-count]"
+"outside change" 1.0 0 -1604481 true "" "if demographic-activated\n  [plot outside-opinion-change-count]"
 "" 1.0 0 -16777216 true "" "plot 0"
 
 BUTTON
@@ -1675,6 +1694,42 @@ NetLogo 6.1.0
       <value value="0.2"/>
     </enumeratedValueSet>
     <steppedValueSet variable="default-opinion-change-threshold" first="0" step="0.01" last="0.5"/>
+    <enumeratedValueSet variable="opinion-fluctuation">
+      <value value="0.1"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="Movement and outside opinion thresholds 2" repetitions="4" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="2000"/>
+    <metric>minority-movement-opinion-change-count</metric>
+    <metric>outside-opinion-change-count</metric>
+    <metric>total-opinion-change-count</metric>
+    <metric>baseline-minority-lean</metric>
+    <metric>current-minority-lean</metric>
+    <metric>minority-opinion-change-percent</metric>
+    <metric>majority-opinion-overturned</metric>
+    <enumeratedValueSet variable="total-population">
+      <value value="1000"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="average-connections">
+      <value value="8"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="minority-opinion-percent">
+      <value value="45"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="movement-percent" first="10" step="30" last="40"/>
+    <enumeratedValueSet variable="initial-movement-opinion-percent">
+      <value value="65"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="movement-influence">
+      <value value="0.1"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="movement-opinion-change-threshold" first="0" step="0.05" last="1"/>
+    <enumeratedValueSet variable="default-influence">
+      <value value="0.1"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="default-opinion-change-threshold" first="0" step="0.05" last="1"/>
     <enumeratedValueSet variable="opinion-fluctuation">
       <value value="0.1"/>
     </enumeratedValueSet>
