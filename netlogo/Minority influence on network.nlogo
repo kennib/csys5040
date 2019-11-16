@@ -647,7 +647,7 @@ movement-percent
 movement-percent
 0
 100
-50.0
+30.0
 1
 1
 NIL
@@ -822,7 +822,7 @@ default-opinion-change-threshold
 default-opinion-change-threshold
 0
 1
-0.1
+0.5
 0.1
 1
 NIL
@@ -852,7 +852,7 @@ movement-influence
 movement-influence
 0
 1
-3.9
+0.2
 0.1
 1
 NIL
@@ -1637,6 +1637,44 @@ NetLogo 6.1.0
     <enumeratedValueSet variable="default-opinion-change-threshold">
       <value value="0.1"/>
     </enumeratedValueSet>
+    <enumeratedValueSet variable="opinion-fluctuation">
+      <value value="0.1"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="Movement and outside opinion thresholds" repetitions="1" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="2000"/>
+    <metric>minority-movement-opinion-change-count</metric>
+    <metric>outside-opinion-change-count</metric>
+    <metric>total-opinion-change-count</metric>
+    <metric>baseline-minority-lean</metric>
+    <metric>current-minority-lean</metric>
+    <metric>minority-opinion-change-percent</metric>
+    <metric>majority-opinion-overturned</metric>
+    <enumeratedValueSet variable="total-population">
+      <value value="1000"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="average-connections">
+      <value value="8"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="minority-opinion-percent">
+      <value value="45"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="movement-percent">
+      <value value="30"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="initial-movement-opinion-percent">
+      <value value="65"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="movement-influence">
+      <value value="0.2"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="movement-opinion-change-threshold" first="0" step="0.01" last="0.5"/>
+    <enumeratedValueSet variable="default-influence">
+      <value value="0.2"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="default-opinion-change-threshold" first="0" step="0.01" last="0.5"/>
     <enumeratedValueSet variable="opinion-fluctuation">
       <value value="0.1"/>
     </enumeratedValueSet>
