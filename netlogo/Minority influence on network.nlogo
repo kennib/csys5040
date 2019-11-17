@@ -239,10 +239,27 @@ to show-group
  ask turtles with [group = 1]
     [set size 3]
 
+<<<<<<< Updated upstream
   ask turtles with [group != 1]
   [ hide-turtle
     ask my-links [hide-link]
    ]
+=======
+to show-movement
+;; displays only the focal minority movement with its connections
+  set display-mode "movement"
+
+  ask minority-movement [
+;;    set size 3
+    show-turtle
+    ask my-links [ show-link ]
+  ]
+
+  ask outside-movement [
+    hide-turtle
+    ask my-links [ hide-link ]
+  ]
+>>>>>>> Stashed changes
 end
 
 to show-spacial-network
@@ -255,22 +272,179 @@ to show-all
 ;; shows all people and connections
 
   ask turtles [
+<<<<<<< Updated upstream
     set size 1
     show-turtle]
+=======
+;;    set size 1
+    show-turtle
+  ]
+>>>>>>> Stashed changes
 
   ask links [show-link]
 end
 
 
+<<<<<<< Updated upstream
 to set-baseline-opinion
 ;; used to set baseline opinion for comparison before changing settings and running to new equilibrium
   ask turtles
      [set baseline-opinion current-opinion]
+=======
+to opinion-colour-mode
+;; shows peoples' opinions
+  set colour-mode "opinion"
+  update-colour
+end
+
+to opinion-change-colour-mode
+;; shows how peoples' opinions changed
+  set colour-mode "opinion change"
+  update-colour
+end
+
+to update-colour
+;; updates the colours of the agents
+  ask turtles [
+    if colour-mode = "opinion" [
+      if current-opinion = "majority" [ set color red]
+      if current-opinion = "minority" [ set color blue]
+    ]
+    if colour-mode = "opinion change" [
+      set color grey
+      if current-opinion = "majority" and baseline-opinion = "minority" [ set color red]
+      if current-opinion = "minority" and baseline-opinion = "majority" [ set color blue]
+    ]
+  ]
+end
+
+
+;;
+;; Reporters
+;;
+
+to-report equilibrium
+  report repeat-totals >= 5
+end
+
+;; Population groups
+
+to-report minority-movement
+  report turtles with [movement = 1]
+end
+
+to-report outside-movement
+  report turtles with [movement != 1]
+end
+
+to-report current-minority-opinion []
+  report turtles with [current-opinion = "minority"]
+end
+
+to-report current-majority-opinion []
+  report turtles with [current-opinion = "majority"]
+end
+
+to-report current-minority-movement
+  report minority-movement with [current-opinion = "minority"]
+end
+
+to-report baseline-minority-opinion []
+  report turtles with [baseline-opinion = "minority"]
+end
+
+to-report baseline-majority-opinion []
+  report turtles with [baseline-opinion = "majority"]
+end
+
+to-report baseline-minority-movement
+  report minority-movement with [baseline-opinion = "minority"]
+end
+
+;; Population counts
+
+to-report minority-movement-count []
+  report count minority-movement
+end
+
+to-report current-minority-opinion-count []
+  report count current-minority-opinion
+end
+
+to-report current-majority-opinion-count []
+  report count current-majority-opinion
+end
+
+to-report current-minority-movement-opinion-count []
+  report count current-minority-movement
+end
+
+to-report baseline-minority-opinion-count []
+  report count baseline-minority-opinion
+end
+
+to-report baseline-majority-opinion-count []
+  report count baseline-majority-opinion
+end
+
+to-report baseline-minority-movement-opinion-count []
+  report count baseline-minority-movement
+end
+
+;; Population percents
+
+to-report current-minority-opinion-percent []
+  report (current-minority-opinion-count / total-population) * 100
+end
+
+to-report current-majority-opinion-percent []
+  report (current-majority-opinion-count / total-population) * 100
+end
+
+to-report current-minority-movement-opinion-percent []
+  report (current-minority-movement-opinion-count / minority-movement-count) * 100
+end
+
+to-report baseline-minority-opinion-percent []
+  report (baseline-minority-opinion-count / total-population) * 100
+end
+
+to-report baseline-majority-opinion-percent []
+  report (baseline-majority-opinion-count / total-population) * 100
+end
+
+to-report baseline-minority-movement-opinion-percent []
+  report (baseline-minority-movement-opinion-count / minority-movement-count) * 100
+end
+
+;; Other metrics
+
+to-report minority-movement-opinion-change-count []
+  report current-minority-movement-opinion-count - baseline-minority-movement-opinion-count
+end
+
+to-report total-opinion-change-count []
+  report current-minority-opinion-count - baseline-minority-opinion-count
+end
+
+to-report outside-opinion-change-count []
+  report total-opinion-change-count - minority-movement-opinion-change-count
+>>>>>>> Stashed changes
 end
 
 
 to reset-opinion-threshold
   ask turtles [set opinion-threshold default-opinion-threshold]
+end
+
+
+
+to-report minority-movement-outside-links []
+  report  sum [count my-spacial-links] of turtles with [movement = 1 and current-opinion = "majority"]
+end
+
+to-report group-centrality []
+  report sum [nw:betweenness-centrality] of turtles with [movement = 1]
 end
 
 
@@ -307,11 +481,19 @@ ticks
 30.0
 
 BUTTON
+<<<<<<< Updated upstream
 21
 55
 213
 95
 1. Set up baseline network
+=======
+84
+94
+464
+127
+1. Create agents and network links
+>>>>>>> Stashed changes
 setup-baseline-network
 NIL
 1
@@ -324,10 +506,17 @@ NIL
 1
 
 BUTTON
+<<<<<<< Updated upstream
 29
 492
 124
 532
+=======
+8
+221
+64
+619
+>>>>>>> Stashed changes
 NIL
 go
 NIL
@@ -360,21 +549,29 @@ PENS
 "no" 1.0 0 -2674135 true "" "plot (count turtles with [current-opinion = \"no\"] / total-population) * 100"
 
 SLIDER
+<<<<<<< Updated upstream
 20
 10
 225
 43
+=======
+84
+19
+464
+52
+>>>>>>> Stashed changes
 total-population
 total-population
 10
 1000
-1000.0
+100.0
 5
 1
 NIL
 HORIZONTAL
 
 SLIDER
+<<<<<<< Updated upstream
 23
 115
 235
@@ -384,21 +581,43 @@ seed-opinion-percent
 1
 100
 47.0
+=======
+83
+140
+463
+173
+minority-opinion-percent
+minority-opinion-percent
+1
+50
+45.0
+>>>>>>> Stashed changes
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
+<<<<<<< Updated upstream
 231
 10
 436
 43
+=======
+85
+58
+464
+91
+>>>>>>> Stashed changes
 average-connections
 average-connections
 1
 25
+<<<<<<< Updated upstream
 6.0
+=======
+2.0
+>>>>>>> Stashed changes
 1
 1
 NIL
@@ -416,12 +635,21 @@ count turtles with [current-opinion = \"yes\"]
 11
 
 BUTTON
+<<<<<<< Updated upstream
 27
 360
 219
 393
 4. Set up influencer group
 setup-group-network
+=======
+83
+450
+468
+483
+4. Activate minority movement
+setup-minority-movement\n
+>>>>>>> Stashed changes
 NIL
 1
 T
@@ -433,6 +661,7 @@ NIL
 1
 
 SLIDER
+<<<<<<< Updated upstream
 25
 267
 197
@@ -442,6 +671,17 @@ group-percent
 0
 100
 10.0
+=======
+84
+375
+464
+408
+movement-percent
+movement-percent
+0
+100
+20.0
+>>>>>>> Stashed changes
 1
 1
 NIL
@@ -459,11 +699,19 @@ count turtles with [current-opinion = \"yes\" and group = 1]
 11
 
 BUTTON
+<<<<<<< Updated upstream
 24
 153
 217
 186
 2. Set up  baseline opinion
+=======
+83
+176
+464
+209
+2. Assign initial opinion
+>>>>>>> Stashed changes
 setup-baseline-opinion
 NIL
 1
@@ -532,6 +780,7 @@ current opinion %
 11
 
 SLIDER
+<<<<<<< Updated upstream
 201
 269
 409
@@ -541,6 +790,17 @@ initial-group-opinion-percent
 0
 100
 60.0
+=======
+83
+413
+463
+446
+initial-movement-opinion-percent
+initial-movement-opinion-percent
+0
+100
+65.0
+>>>>>>> Stashed changes
 1
 1
 NIL
@@ -572,9 +832,15 @@ MONITOR
 1038
 460
 1192
+<<<<<<< Updated upstream
 505
 total opinion change
 (count turtles with [current-opinion = \"yes\"]) -\n(count turtles with [baseline-opinion = \"yes\"])
+=======
+649
+total opinion change
+total-opinion-change-count
+>>>>>>> Stashed changes
 17
 1
 11
@@ -601,11 +867,19 @@ Trying to find small group change with large total change
 1
 
 BUTTON
+<<<<<<< Updated upstream
 630
 501
 800
 534
 show spacial network
+=======
+667
+485
+837
+518
+show initial network
+>>>>>>> Stashed changes
 show-spacial-network
 NIL
 1
@@ -618,6 +892,7 @@ NIL
 1
 
 SLIDER
+<<<<<<< Updated upstream
 236
 153
 427
@@ -628,32 +903,36 @@ default-opinion-threshold
 1
 0.5
 0.1
+=======
+84
+255
+464
+288
+default-opinion-change-threshold
+default-opinion-change-threshold
+0
+1
+0.1
+0.01
+>>>>>>> Stashed changes
 1
 NIL
 HORIZONTAL
 
 SLIDER
+<<<<<<< Updated upstream
 239
 116
 428
 149
+=======
+84
+220
+464
+253
+>>>>>>> Stashed changes
 default-influence
 default-influence
-0
-1
-0.5
-0.1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-212
-319
-384
-352
-group-influence
-group-influence
 0
 1
 0.7
@@ -663,6 +942,34 @@ NIL
 HORIZONTAL
 
 SLIDER
+<<<<<<< Updated upstream
+212
+319
+384
+352
+group-influence
+group-influence
+0
+1
+0.7
+=======
+85
+501
+468
+534
+movement-influence
+movement-influence
+0
+1
+1.0
+>>>>>>> Stashed changes
+0.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+<<<<<<< Updated upstream
 24
 318
 206
@@ -673,16 +980,36 @@ group-opinion-threshold
 1
 0.7
 0.1
+=======
+84
+537
+467
+570
+movement-opinion-change-threshold
+movement-opinion-change-threshold
+0
+1
+0.05
+0.01
+>>>>>>> Stashed changes
 1
 NIL
 HORIZONTAL
 
 BUTTON
+<<<<<<< Updated upstream
 26
 198
 219
 231
 3. Set baseline equilibrium
+=======
+84
+328
+464
+362
+3. Run opinion spread - initial equilibrium
+>>>>>>> Stashed changes
 set-baseline-equilibrium
 NIL
 1
@@ -695,11 +1022,19 @@ NIL
 1
 
 BUTTON
+<<<<<<< Updated upstream
 27
 418
 201
 451
 5. Find new equilibrium
+=======
+83
+575
+469
+608
+5. Run opinion spread - Find new equilibrium
+>>>>>>> Stashed changes
 set-new-equilibrium
 NIL
 1
@@ -711,6 +1046,7 @@ NIL
 NIL
 1
 
+<<<<<<< Updated upstream
 TEXTBOX
 141
 502
@@ -719,6 +1055,47 @@ TEXTBOX
 ONE CLICK RUN - RUN ALL STEPS
 14
 0.0
+=======
+MONITOR
+989
+213
+1046
+258
+seed %
+minority-opinion-percent
+17
+1
+11
+
+BUTTON
+8
+18
+64
+173
+NIL
+setup
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+SLIDER
+85
+291
+465
+324
+opinion-fluctuation
+opinion-fluctuation
+0
+1
+0.0
+0.1
+>>>>>>> Stashed changes
 1
 
 MONITOR
@@ -732,7 +1109,155 @@ seed-opinion-percent
 1
 11
 
+<<<<<<< Updated upstream
+=======
+PLOT
+986
+316
+1412
+497
+Change
+NIL
+NIL
+0.0
+100.0
+0.0
+100.0
+true
+true
+"" ""
+PENS
+"movement change" 1.0 0 -13345367 true "" "if minority-movement-added\n  [plot minority-movement-opinion-change-count]"
+"outside change" 1.0 0 -1604481 true "" "if minority-movement-added\n  [plot outside-opinion-change-count]"
+"" 1.0 0 -16777216 true "" "plot 0"
+
+BUTTON
+581
+531
+697
+564
+opinion
+opinion-colour-mode
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+TEXTBOX
+500
+539
+589
+557
+colour mode:
+11
+0.0
+1
+
+BUTTON
+581
+566
+708
+599
+opinion change
+opinion-change-colour-mode
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+BUTTON
+844
+526
+899
+559
+1
+ask turtles [set size 1]
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+BUTTON
+843
+561
+898
+594
+2
+ask turtles [set size 2]
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+TEXTBOX
+798
+534
+838
+562
+agent\nsize:
+11
+0.0
+1
+
+PLOT
+1148
+328
+1348
+478
+Links
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "histogram [count my-links] of turtles"
+
+MONITOR
+1047
+384
+1139
+429
+outside links
+minority-movement-outside-links
+17
+1
+11
+
+>>>>>>> Stashed changes
 @#$#@#$#@
+Stuart experiments
+
+Simple scatter plot of seed v. equilibrium opinion for different network degrees.
+
+
+
+
+
 Method 
 
 1. Create a network of people with prescribed average connections (random network)
@@ -1224,6 +1749,73 @@ NetLogo 6.1.0
     </enumeratedValueSet>
     <enumeratedValueSet variable="default-influence">
       <value value="1"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="Opinion equilibrium by intial opinion and average links" repetitions="10" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>current-minority-opinion-count</metric>
+    <enumeratedValueSet variable="average-connections">
+      <value value="2"/>
+      <value value="10"/>
+      <value value="20"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="total-population">
+      <value value="200"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="default-opinion-change-threshold">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="initial-movement-opinion-percent">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="movement-influence">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="movement-percent">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="default-influence">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="minority-opinion-percent" first="0" step="5" last="100"/>
+    <enumeratedValueSet variable="opinion-fluctuation">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="movement-opinion-change-threshold">
+      <value value="0.1"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="Effect of minority group influence" repetitions="10" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>count turtles</metric>
+    <enumeratedValueSet variable="average-connections">
+      <value value="8"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="total-population">
+      <value value="1000"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="default-opinion-change-threshold">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="initial-movement-opinion-percent">
+      <value value="65"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="movement-influence" first="0" step="0.2" last="1"/>
+    <enumeratedValueSet variable="movement-percent">
+      <value value="5"/>
+      <value value="10"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="default-influence" first="0" step="0.2" last="1"/>
+    <enumeratedValueSet variable="minority-opinion-percent">
+      <value value="47"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="opinion-fluctuation">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="movement-opinion-change-threshold">
+      <value value="0.1"/>
     </enumeratedValueSet>
   </experiment>
 </experiments>
